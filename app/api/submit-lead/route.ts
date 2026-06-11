@@ -1,75 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
-  // Validate required env vars are present
-  const missingEnv = [
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'NEXT_PUBLIC_APP_URL',
-  ].filter(k => !process.env[k])
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const appUrl      = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '')
 
-  if (missingEnv.length > 0) {
-    console.error('[submit-lead] Missing env vars:', missingEnv)
-    return NextResponse.json(
-      { error: `Server misconfiguration: missing ${missingEnv.join(', ')}` },
-      { status: 500 }
-    )
+  // Surface missing env vars immediately
+  if (!supabaseUrl) return NextResponse.json({ error: 'Missing NEXT_PUBLIC_SUPABASE_URL' }, { status: 500 })
+  if (!serviceKey)  return NextResponse.json({ error: 'Missing SUPABASE_SERVICE_ROLE_KEY' }, { status: 500 })
+  if (!appUrl)      return NextResponse.json({ error: 'Missing NEXT_PUBLIC_APP_URL' }, { status: 500 })
+
+  let body: Record<string, string>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { firstName, lastName, bizName, phone, email, niche, city, message, plan } = body
+
+  if (!firstName || !bizName || !phone || !email || !niche) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
   try {
-    const body = await req.json()
-    const { firstName, lastName, bizName, phone, email, niche, city, message, plan } = body
-
-    if (!firstName || !bizName || !phone || !email || !niche) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    const db = supabaseAdmin()
+    const db = createClient(supabaseUrl, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
     const { data: lead, error } = await db
       .from('leads')
       .insert({
         first_name: firstName,
-        last_name: lastName || '',
-        biz_name: bizName,
+        last_name:  lastName || '',
+        biz_name:   bizName,
         phone,
         email,
         niche,
-        city: city || '',
+        city:    city    || '',
         message: message || '',
-        plan: plan || '',
-        status: 'new'
+        plan:    plan    || '',
+        status: 'new',
       })
       .select()
       .single()
 
     if (error) {
-      console.error('[submit-lead] Supabase error:', error)
+      console.error('[submit-lead] Supabase insert error:', error)
       return NextResponse.json(
-        { error: `Database error: ${error.message}` },
+        { error: `Database error (${error.code}): ${error.message}` },
         { status: 500 }
       )
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, '')
     const intakeUrl = `${appUrl}/intake?token=${lead.intake_token}`
 
     return NextResponse.json({
       success: true,
       leadId: lead.id,
       intakeUrl,
-      message: `Thank you ${firstName}! Check your email for next steps.`
+      message: `Thank you ${firstName}! Check your email for next steps.`,
     })
 
-  } catch (err) {
-    console.error('[submit-lead] Unexpected error:', err)
-    return NextResponse.json(
-      { error: 'Failed to save enquiry. Please try again.' },
-      { status: 500 }
-    )
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[submit-lead] Unexpected error:', msg)
+    return NextResponse.json({ error: `Unexpected error: ${msg}` }, { status: 500 })
   }
 }
