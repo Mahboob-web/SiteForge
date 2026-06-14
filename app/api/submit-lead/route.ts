@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       leadId: lead.id,
+      intakeToken: lead.intake_token,
       intakeUrl,
       message: `Thank you ${firstName}! Check your email for next steps.`,
     })
