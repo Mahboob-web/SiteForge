@@ -291,6 +291,9 @@ export default function Home() {
 
   const up = (k: string, v: string) => setForm(p => ({ ...p, [k]:v }))
 
+  // Relative URL — browser resolves against current origin automatically
+  const intakeUrl = intakeToken ? `/intake?token=${intakeToken}` : ''
+
   const submit = async (e: { preventDefault():void }) => {
     e.preventDefault(); setSubmitting(true); setError('')
     try {
@@ -594,34 +597,29 @@ export default function Home() {
                 We&apos;ll be in touch within 2 hours. In the meantime, complete your intake form so we can get started right away.
               </p>
 
-              {(() => {
-                const url = intakeToken
-                  ? `${window.location.origin}/intake?token=${intakeToken}`
-                  : null
-                return url ? (
-                  <>
-                    {/* Prominent intake CTA */}
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="btn-primary"
-                      style={{ display:'inline-flex', alignItems:'center', gap:10, background:'#c8f04b', color:'#080f0a', padding:'16px 36px', borderRadius:9999, fontSize:16, fontWeight:700, textDecoration:'none', boxShadow:'0 8px 40px rgba(200,240,75,0.35)', marginBottom:24 }}>
-                      <span>Complete your intake form</span>
-                      <span style={{ fontSize:18 }}>→</span>
-                    </a>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.28)', marginBottom:24 }}>Takes 10 minutes · Unlocks your build slot</p>
+              {intakeUrl && (
+                <>
+                  {/* Prominent intake CTA */}
+                  <a href={intakeUrl} target="_blank" rel="noopener noreferrer" className="btn-primary"
+                    style={{ display:'inline-flex', alignItems:'center', gap:10, background:'#c8f04b', color:'#080f0a', padding:'16px 36px', borderRadius:9999, fontSize:16, fontWeight:700, textDecoration:'none', boxShadow:'0 8px 40px rgba(200,240,75,0.35)', marginBottom:24 }}>
+                    <span>Complete your intake form</span>
+                    <span style={{ fontSize:18 }}>→</span>
+                  </a>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.28)', marginBottom:24 }}>Takes 10 minutes · Unlocks your build slot</p>
 
-                    {/* Copy link row */}
-                    <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:12, textAlign:'left', flexWrap:'wrap' }}>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', margin:'0 0 4px', fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase' }}>Your intake link</p>
-                        <p style={{ fontSize:12, color:'rgba(200,240,75,0.7)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{url}</p>
-                      </div>
-                      <button onClick={() => navigator.clipboard.writeText(url)}
-                        style={{ flexShrink:0, background:'rgba(200,240,75,0.1)', border:'1px solid rgba(200,240,75,0.2)', borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:700, color:'#c8f04b', cursor:'pointer', fontFamily:'Outfit, sans-serif', whiteSpace:'nowrap' }}>
-                        Copy link
-                      </button>
+                  {/* Copy link row */}
+                  <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:12, textAlign:'left', flexWrap:'wrap' }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', margin:'0 0 4px', fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase' }}>Your intake link</p>
+                      <p style={{ fontSize:12, color:'rgba(200,240,75,0.7)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{window.location.origin}{intakeUrl}</p>
                     </div>
-                  </>
-                ) : null
-              })()}
+                    <button onClick={() => navigator.clipboard.writeText(window.location.origin + intakeUrl)}
+                      style={{ flexShrink:0, background:'rgba(200,240,75,0.1)', border:'1px solid rgba(200,240,75,0.2)', borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:700, color:'#c8f04b', cursor:'pointer', fontFamily:'Outfit, sans-serif', whiteSpace:'nowrap' }}>
+                      Copy link
+                    </button>
+                  </div>
+                </>
+              )}
 
               {/* Checklist */}
               <div style={{ marginTop:32, display:'flex', gap:24, justifyContent:'center', flexWrap:'wrap' }}>
