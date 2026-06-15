@@ -81,8 +81,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Trigger generation (fire and forget — no await)
-    // Using absolute URL for internal API call
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const rawUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = /^https?:\/\//.test(rawUrl) ? rawUrl : `https://${rawUrl}`
     fetch(`${appUrl}/api/generate-site`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

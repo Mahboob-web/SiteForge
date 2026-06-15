@@ -588,13 +588,18 @@ export default function Home() {
           )}
 
           {submitted ? (
-            <div className="reveal glass-card" style={{ background:'rgba(200,240,75,0.04)', border:'1px solid rgba(200,240,75,0.18)', borderRadius:28, padding:'clamp(36px,5vw,56px)', textAlign:'center', boxShadow:'0 24px 64px rgba(0,0,0,0.32), inset 0 1px 0 rgba(200,240,75,0.07)' }}>
+            <div className="glass-card" style={{ background:'rgba(200,240,75,0.04)', border:'1px solid rgba(200,240,75,0.18)', borderRadius:28, padding:'clamp(36px,5vw,56px)', textAlign:'center', boxShadow:'0 24px 64px rgba(0,0,0,0.32), inset 0 1px 0 rgba(200,240,75,0.07)' }}>
               <div style={{ fontSize:56, marginBottom:20 }}>🎉</div>
               <h3 style={{ fontFamily:'Fraunces, serif', fontSize:'clamp(26px,3vw,36px)', color:'white', margin:'0 0 14px', letterSpacing:'-0.035em', lineHeight:1.1 }}>
                 Enquiry received!
               </h3>
               <p style={{ color:'rgba(255,255,255,0.5)', lineHeight:1.75, margin:'0 0 36px', fontSize:15, maxWidth:420, marginLeft:'auto', marginRight:'auto' }}>
                 We&apos;ll be in touch within 2 hours. In the meantime, complete your intake form so we can get started right away.
+              </p>
+
+              {/* DEBUG — remove after confirming token works */}
+              <p style={{ fontSize:11, color:'rgba(255,255,0,0.6)', marginBottom:16, wordBreak:'break-all' }}>
+                DEBUG token: {intakeToken || '(empty — API not returning token)'}
               </p>
 
               {intakeUrl && (
