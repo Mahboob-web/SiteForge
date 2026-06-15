@@ -100,7 +100,7 @@ export default function IntakeForm() {
       </div>
       <div style={st.container}>
         <div style={st.stepNav}>
-          {['Business','Services','Areas','Brand','USPs','Reviews','Assets'].map((label,i)=>(
+          {['Business','Services','Areas','Brand','USPs','Reviews','Assets'].map((_,i)=>(
             <div key={i} style={{...st.stepDot,background:step===i+1?'#c8f04b':step>i+1?'#276135':'rgba(255,255,255,0.1)',color:step===i+1?'#0f1612':step>i+1?'white':'rgba(255,255,255,0.4)'}}>{step>i+1?'✓':i+1}</div>
           ))}
         </div>
@@ -210,7 +210,7 @@ const st:Record<string,React.CSSProperties>={
   grid2:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16},
   field:{marginBottom:16},
   lbl:{display:'block',fontSize:12.5,fontWeight:600,color:'rgba(255,255,255,0.5)',letterSpacing:'0.01em',marginBottom:6},
-  input:{width:'100%',padding:'12px 14px',borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',color:'white',fontSize:14,fontFamily:'Outfit,sans-serif',outline:'none',boxSizing:'border-box'},
+  input:{width:'100%',padding:'12px 14px',borderRadius:10,border:'1.5px solid rgba(255,255,255,0.18)',background:'rgba(255,255,255,0.09)',color:'white',fontSize:14,fontFamily:'Outfit,sans-serif',outline:'none',boxSizing:'border-box',colorScheme:'dark'},
   checkGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:8,marginBottom:24},
   check:{padding:'10px 13px',borderRadius:10,border:'1.5px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.03)',fontSize:13,color:'rgba(255,255,255,0.5)',cursor:'pointer',userSelect:'none'},
   checkOn:{border:'1.5px solid rgba(200,240,75,0.4)',background:'rgba(200,240,75,0.08)',color:'#c8f04b'},
