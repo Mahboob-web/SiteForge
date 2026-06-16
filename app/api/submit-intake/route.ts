@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { sendClientConfirmation, sendAdminNotification } from '@/lib/email'
 import type { IntakeData } from '@/types'
 
 export async function POST(req: NextRequest) {
@@ -79,6 +80,20 @@ export async function POST(req: NextRequest) {
         .update({ status: 'intake_complete' })
         .eq('id', lead.id)
     }
+
+    // Send emails (fire and forget — failures don't break the response)
+    const domainSlug = body.domain || `${(body.biz_name || 'your-site').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.vercel.app`
+    sendClientConfirmation({
+      firstName: body.owner_name?.split(' ')[0] || body.biz_name || 'there',
+      bizName:   body.biz_name   || 'Your Business',
+      plan:      body.plan       || 'starter',
+      email:     body.email      || '',
+      domain:    domainSlug,
+      industry:  body.industry   || '',
+    }).catch(err => console.error('[email] client confirmation failed:', err))
+
+    sendAdminNotification(body as unknown as Record<string, unknown>)
+      .catch(err => console.error('[email] admin notification failed:', err))
 
     // Trigger generation (fire and forget — no await)
     const rawUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
