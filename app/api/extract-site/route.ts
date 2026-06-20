@@ -78,7 +78,7 @@ function visibleText(html: string): string {
     .slice(0, 14000)
 }
 
-// ─── Brand color extraction (no dependencies) ──────────────────────────────
+// ─── Brand color extraction ────────────────────────────────────────────────
 
 function extractBrandColors(html: string): string[] {
   const score = new Map<string, number>()
@@ -90,28 +90,24 @@ function extractBrandColors(html: string): string[] {
     const r = parseInt(h.slice(0, 2), 16)
     const g = parseInt(h.slice(2, 4), 16)
     const b = parseInt(h.slice(4, 6), 16)
-    if (r < 25 && g < 25 && b < 25) return         // near-black
-    if (r > 240 && g > 240 && b > 240) return       // near-white
-    if (Math.max(r, g, b) - Math.min(r, g, b) < 28) return  // near-gray
+    if (r < 25 && g < 25 && b < 25) return
+    if (r > 240 && g > 240 && b > 240) return
+    if (Math.max(r, g, b) - Math.min(r, g, b) < 28) return
     const color = '#' + h
     score.set(color, (score.get(color) || 0) + weight)
   }
 
-  // 1. theme-color meta — most explicit brand declaration
   const tc = metaTag(html, 'theme-color')
   if (tc) add(tc, 500)
 
-  // 2. CSS custom properties named for brand/primary/accent
   const cssBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map(m => m[1]).join('\n')
   const varRx = /--(?:primary|brand|accent|main|cta|key|highlight|theme)(?:-color|-bg|-foreground)?[^:]*:\s*(#[0-9a-fA-F]{3,6})/gi
   let m: RegExpExecArray | null
   while ((m = varRx.exec(cssBlocks)) !== null) add(m[1], 200)
 
-  // 3. All hex colors in <style> blocks (count frequency)
   const hexRx = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g
   while ((m = hexRx.exec(cssBlocks)) !== null) add('#' + m[1], 1)
 
-  // 4. Inline style attributes (button bg, etc.) — lower weight
   const inlineRx = /style=["'][^"']*?(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/gi
   while ((m = inlineRx.exec(html)) !== null) add(m[1], 2)
 
@@ -126,14 +122,12 @@ function extractBrandColors(html: string): string[] {
 function extractFromHtml(html: string, pageUrl: string): Record<string, unknown> {
   const result: Record<string, unknown> = {}
 
-  // Business name
   const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]
     ?.replace(/\s*[·\-–|]\s*(Google Maps|Facebook|Instagram|Yelp|Yellow Pages)$/i, '').trim()
   const ogTitle = metaTag(html, 'og:title')?.replace(/\s*[·\-–|]\s*(Google Maps|Facebook)$/i, '').trim()
   if (title && title.length > 2) result.biz_name = title
   else if (ogTitle && ogTitle.length > 2) result.biz_name = ogTitle
 
-  // Phone (tel: links first, then meta description)
   const phones = telLinks(html)
   if (phones.length) result.phone = phones[0]
   else {
@@ -142,27 +136,21 @@ function extractFromHtml(html: string, pageUrl: string): Record<string, unknown>
     if (phoneInDesc) result.phone = phoneInDesc[0]
   }
 
-  // Email
   const emails = mailLinks(html)
   if (emails.length) result.email = emails[0]
 
-  // Social
   const social = socialLinks(html)
   if (social.facebook) result.facebook_url = social.facebook
   if (social.instagram) result.instagram_url = social.instagram
 
-  // Logo
   const logo = logoUrl(html, pageUrl)
   if (logo) result.logo_url = logo
 
-  // Meta description — for GMB this often has "★ 4.5 (123) · Category · Address · Phone"
   const desc = metaTag(html, 'description')
   const ogDesc = metaTag(html, 'og:description')
   if (desc) {
-    // Rating
     const ratingMatch = desc.match(/[★☆✩]?\s*(\d+(?:\.\d+)?)\s*[★☆]?\s*(?:\((\d[\d,]+)\s*reviews?\))?/i)
     if (ratingMatch) result.star_rating = `${ratingMatch[1]}${ratingMatch[2] ? ` (${ratingMatch[2].replace(',', '')} reviews)` : ''}`
-    // For GMB bullet-separated format: Rating · Category · Address · Phone
     const parts = desc.split(/[·•|]/).map(p => p.trim()).filter(p => p.length > 2)
     const addrPart = parts.find(p => /^\d+\s+\w|(?:St|Rd|Ave|Dr|Blvd|Way|Ct|Cres|Pl|Ln|Hwy)\b/i.test(p))
     if (addrPart && !result.phone) {
@@ -172,7 +160,6 @@ function extractFromHtml(html: string, pageUrl: string): Record<string, unknown>
     if (addrPart) result.address = addrPart
   }
 
-  // Schema.org JSON-LD — most reliable for real websites
   const schemas = extractJsonLd(html)
   for (const s of schemas as Record<string, unknown>[]) {
     if (!result.biz_name && s.name) result.biz_name = s.name
@@ -202,20 +189,18 @@ function extractFromHtml(html: string, pageUrl: string): Record<string, unknown>
     }
   }
 
-  // OG description as fallback for biz_story
   if (ogDesc && ogDesc.length > 40) result.biz_story = ogDesc
 
-  // Brand colors extracted from CSS / meta theme-color
   const brandColors = extractBrandColors(html)
   if (brandColors.length) {
-    result.brand_color = brandColors[0]
+    result.brand_color  = brandColors[0]
     result.brand_colors = brandColors
   }
 
   return result
 }
 
-// ─── Phase 2: Claude enrichment (runs if we have page text) ───────────────
+// ─── Phase 2: Claude enrichment (only if API key is present) ──────────────
 
 async function enrichWithClaude(
   context: string,
@@ -267,14 +252,11 @@ Only include keys where you found real data. Never fabricate. Return JSON only.`
   })
 
   const raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
-  // Find the outermost JSON object in the response, even if there's surrounding text
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error(`Claude returned no JSON. Response: ${raw.slice(0, 200)}`)
 
   const claude = JSON.parse(jsonMatch[0]) as Record<string, unknown>
-
-  // Merge: Claude fills in what Phase 1 missed, Phase 1 data wins on conflict
-  // (Phase 1 is based on actual HTML so more trustworthy for phones, emails, logo)
+  // Phase 1 wins on conflict — HTML is more trustworthy for phones, emails, logo
   return { ...claude, ...phase1 }
 }
 
@@ -297,7 +279,6 @@ async function fetchHtml(url: string): Promise<{ html: string; finalUrl: string 
         },
         signal: AbortSignal.timeout(10000),
       })
-      // Reject Google consent/login redirects
       if (/accounts\.google\.com|consent\.google\.com/i.test(res.url)) continue
       return { html: await res.text(), finalUrl: res.url }
     } catch(e) { lastErr = e }
@@ -308,10 +289,6 @@ async function fetchHtml(url: string): Promise<{ html: string; finalUrl: string 
 // ─── Route handler ─────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: 'Missing ANTHROPIC_API_KEY env var' }, { status: 500 })
-  }
-
   let url: string
   try {
     const body = await req.json()
@@ -341,15 +318,16 @@ export async function POST(req: NextRequest) {
   // ── Phase 1: always extract from HTML ────────────────────────────────────
   const phase1 = extractFromHtml(html, finalUrl)
 
-  // ── Phase 2: Claude enrichment if we have page content ───────────────────
+  // ── Phase 2: Claude enrichment (only if key present and page has content) ─
   const pageText = visibleText(html)
   const hasContent = pageText.length > 150
+  const hasClaudeKey = !!process.env.ANTHROPIC_API_KEY
 
-  if (hasContent) {
+  if (hasContent && hasClaudeKey) {
     const context = [
       `Page title: ${html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() || ''}`,
-      metaTag(html, 'description') && `Meta description: ${metaTag(html, 'description')}`,
-      metaTag(html, 'og:title')    && `OG title: ${metaTag(html, 'og:title')}`,
+      metaTag(html, 'description')    && `Meta description: ${metaTag(html, 'description')}`,
+      metaTag(html, 'og:title')       && `OG title: ${metaTag(html, 'og:title')}`,
       metaTag(html, 'og:description') && `OG description: ${metaTag(html, 'og:description')}`,
       telLinks(html).length  && `Tel links: ${telLinks(html).join(', ')}`,
       mailLinks(html).length && `Email links: ${mailLinks(html).join(', ')}`,
@@ -365,7 +343,6 @@ export async function POST(req: NextRequest) {
       if (count > 0) return NextResponse.json({ extracted: merged })
     } catch (err) {
       console.error('[extract-site] Claude failed, falling back to Phase 1:', err)
-      // Fall through to Phase 1 result below
     }
   }
 
