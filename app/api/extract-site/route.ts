@@ -31,8 +31,11 @@ function telLinks(html: string): string[] {
   const hits: string[] = []
   const rx = /href=["']tel:([^"'\s]+)/gi
   let m: RegExpExecArray | null
-  while ((m = rx.exec(html)) !== null) hits.push(m[1].replace(/[^\d+]/g, '').replace(/^0061/, '0').replace(/^\+61/, '0'))
-  return [...new Set(hits)].filter(p => p.length >= 8)
+  while ((m = rx.exec(html)) !== null) {
+    const n = m[1].replace(/[^\d+]/g, '').replace(/^0061/, '0').replace(/^\+61/, '0')
+    if (n.length >= 8) hits.push(n)
+  }
+  return [...new Set(hits)]
 }
 
 function mailLinks(html: string): string[] {
@@ -78,43 +81,47 @@ function visibleText(html: string): string {
     .slice(0, 14000)
 }
 
+// ─── Australian phone numbers from raw HTML (including script content) ─────
+// Google Maps embeds phone as a string inside JS — must search before stripping
+
+function phonesFromRaw(html: string): string[] {
+  const found = new Set<string>()
+  // Match Australian numbers in any context: 04xx xxx xxx, (0x) xxxx xxxx, +61x xxxx xxxx
+  const rx = /(?<![.\d])(\+?61[\s.-]?[2-9][\s.-]?\d{4}[\s.-]?\d{4}|\+?61[\s.-]?4\d{2}[\s.-]?\d{3}[\s.-]?\d{3}|0[2-9][\s.-]?\d{4}[\s.-]?\d{4}|04\d{2}[\s.-]?\d{3}[\s.-]?\d{3}|1[38]00[\s.-]?\d{3}[\s.-]?\d{3})(?![\d])/g
+  let m: RegExpExecArray | null
+  while ((m = rx.exec(html)) !== null) {
+    const n = m[1].replace(/[\s.\-]/g, '').replace(/^\+61/, '0').replace(/^0061/, '0')
+    if (n.length >= 8 && n.length <= 12) found.add(n)
+  }
+  return [...found]
+}
+
 // ─── Brand color extraction ────────────────────────────────────────────────
 
 function extractBrandColors(html: string): string[] {
   const score = new Map<string, number>()
-
   const add = (raw: string, weight: number) => {
     let h = raw.replace('#', '').toLowerCase().trim()
     if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2]
     if (!/^[0-9a-f]{6}$/.test(h)) return
-    const r = parseInt(h.slice(0, 2), 16)
-    const g = parseInt(h.slice(2, 4), 16)
-    const b = parseInt(h.slice(4, 6), 16)
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16)
     if (r < 25 && g < 25 && b < 25) return
     if (r > 240 && g > 240 && b > 240) return
     if (Math.max(r, g, b) - Math.min(r, g, b) < 28) return
     const color = '#' + h
     score.set(color, (score.get(color) || 0) + weight)
   }
-
   const tc = metaTag(html, 'theme-color')
   if (tc) add(tc, 500)
-
   const cssBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map(m => m[1]).join('\n')
-  const varRx = /--(?:primary|brand|accent|main|cta|key|highlight|theme)(?:-color|-bg|-foreground)?[^:]*:\s*(#[0-9a-fA-F]{3,6})/gi
+  const varRx = /--(?:primary|brand|accent|main|cta|key|highlight|theme)(?:-color|-bg)?[^:]*:\s*(#[0-9a-fA-F]{3,6})/gi
   let m: RegExpExecArray | null
   while ((m = varRx.exec(cssBlocks)) !== null) add(m[1], 200)
-
   const hexRx = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g
   while ((m = hexRx.exec(cssBlocks)) !== null) add('#' + m[1], 1)
-
   const inlineRx = /style=["'][^"']*?(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/gi
   while ((m = inlineRx.exec(html)) !== null) add(m[1], 2)
-
-  return [...score.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([color]) => color)
+  return [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([color]) => color)
 }
 
 // ─── Phase 1: Pure HTML extraction (no Claude, always runs) ───────────────
@@ -122,44 +129,54 @@ function extractBrandColors(html: string): string[] {
 function extractFromHtml(html: string, pageUrl: string): Record<string, unknown> {
   const result: Record<string, unknown> = {}
 
-  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]
-    ?.replace(/\s*[·\-–|]\s*(Google Maps|Facebook|Instagram|Yelp|Yellow Pages)$/i, '').trim()
-  const ogTitle = metaTag(html, 'og:title')?.replace(/\s*[·\-–|]\s*(Google Maps|Facebook)$/i, '').trim()
-  if (title && title.length > 2) result.biz_name = title
-  else if (ogTitle && ogTitle.length > 2) result.biz_name = ogTitle
+  // --- Business name ---
+  const rawTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || ''
+  const cleanTitle = rawTitle.replace(/\s*[·\-–|]\s*(Google Maps|Facebook|Instagram|Yelp|Yellow Pages|Home)$/i, '').trim()
+  const ogTitle = metaTag(html, 'og:title').replace(/\s*[·\-–|]\s*(Google Maps|Facebook)$/i, '').trim()
+  const itemTitle = html.match(/<[^>]+itemprop=["']name["'][^>]*content=["']([^"']+)["']/i)?.[1]?.trim()
+  const chosen = itemTitle || (cleanTitle.length > 2 ? cleanTitle : ogTitle)
+  if (chosen && chosen.length > 2) result.biz_name = chosen
 
-  const phones = telLinks(html)
-  if (phones.length) result.phone = phones[0]
-  else {
-    const desc = metaTag(html, 'description')
-    const phoneInDesc = desc.match(/0[2-9]\s?\d{4}\s?\d{4}|04\d{2}\s?\d{3}\s?\d{3}|1[38]\d{2}\s?\d{3}\s?\d{3}/)
-    if (phoneInDesc) result.phone = phoneInDesc[0]
+  // --- Phone: tel: links first, then raw HTML scan (catches Google Maps JS), then meta desc ---
+  const telPhones = telLinks(html)
+  const rawPhones = phonesFromRaw(html)
+  const allPhones = [...new Set([...telPhones, ...rawPhones])].filter(p => p.length >= 8)
+  if (allPhones.length) result.phone = allPhones[0]
+
+  if (!result.phone) {
+    const desc = metaTag(html, 'description') || metaTag(html, 'og:description')
+    const m = desc.match(/0[2-9][\s]?\d{4}[\s]?\d{4}|04\d{2}[\s]?\d{3}[\s]?\d{3}/)
+    if (m) result.phone = m[0]
   }
 
+  // --- Email ---
   const emails = mailLinks(html)
   if (emails.length) result.email = emails[0]
 
+  // --- Social ---
   const social = socialLinks(html)
   if (social.facebook) result.facebook_url = social.facebook
   if (social.instagram) result.instagram_url = social.instagram
 
+  // --- Logo ---
   const logo = logoUrl(html, pageUrl)
   if (logo) result.logo_url = logo
 
-  const desc = metaTag(html, 'description')
-  const ogDesc = metaTag(html, 'og:description')
+  // --- Rating + address from meta description (GMB bullet format) ---
+  const desc = metaTag(html, 'description') || metaTag(html, 'og:description')
   if (desc) {
-    const ratingMatch = desc.match(/[★☆✩]?\s*(\d+(?:\.\d+)?)\s*[★☆]?\s*(?:\((\d[\d,]+)\s*reviews?\))?/i)
-    if (ratingMatch) result.star_rating = `${ratingMatch[1]}${ratingMatch[2] ? ` (${ratingMatch[2].replace(',', '')} reviews)` : ''}`
-    const parts = desc.split(/[·•|]/).map(p => p.trim()).filter(p => p.length > 2)
-    const addrPart = parts.find(p => /^\d+\s+\w|(?:St|Rd|Ave|Dr|Blvd|Way|Ct|Cres|Pl|Ln|Hwy)\b/i.test(p))
-    if (addrPart && !result.phone) {
-      const phoneInPart = addrPart.match(/0[2-9]\s?\d{4}\s?\d{4}|04\d{2}\s?\d{3}\s?\d{3}/)
-      if (phoneInPart) result.phone = phoneInPart[0]
+    const ratingM = desc.match(/(\d+(?:\.\d+)?)\s*[★⭐✩☆]|\b(\d+(?:\.\d)?)\s*(?:out of|\/)\s*5\b/i)
+    const reviewM = desc.match(/\((\d[\d,]+)\s*reviews?\)/i)
+    if (ratingM) {
+      const rat = ratingM[1] || ratingM[2]
+      result.star_rating = rat + (reviewM ? ` (${reviewM[1].replace(',', '')} reviews)` : '')
     }
+    const parts = desc.split(/[·•|]/).map(p => p.trim()).filter(p => p.length > 2)
+    const addrPart = parts.find(p => /\b(?:St|Rd|Ave|Dr|Blvd|Way|Ct|Cres|Pl|Ln|Hwy|Street|Road|Avenue)\b/i.test(p) || /^\d+\s+\w/.test(p))
     if (addrPart) result.address = addrPart
   }
 
+  // --- Schema.org JSON-LD ---
   const schemas = extractJsonLd(html)
   for (const s of schemas as Record<string, unknown>[]) {
     if (!result.biz_name && s.name) result.biz_name = s.name
@@ -189,8 +206,11 @@ function extractFromHtml(html: string, pageUrl: string): Record<string, unknown>
     }
   }
 
-  if (ogDesc && ogDesc.length > 40) result.biz_story = ogDesc
+  // --- OG description as biz_story fallback ---
+  const ogDesc = metaTag(html, 'og:description')
+  if (ogDesc && ogDesc.length > 40 && !result.biz_story) result.biz_story = ogDesc
 
+  // --- Brand colors ---
   const brandColors = extractBrandColors(html)
   if (brandColors.length) {
     result.brand_color  = brandColors[0]
@@ -200,7 +220,7 @@ function extractFromHtml(html: string, pageUrl: string): Record<string, unknown>
   return result
 }
 
-// ─── Phase 2: Claude enrichment (only if API key is present) ──────────────
+// ─── Phase 2: Claude enrichment ───────────────────────────────────────────
 
 async function enrichWithClaude(
   context: string,
@@ -254,9 +274,7 @@ Only include keys where you found real data. Never fabricate. Return JSON only.`
   const raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error(`Claude returned no JSON. Response: ${raw.slice(0, 200)}`)
-
   const claude = JSON.parse(jsonMatch[0]) as Record<string, unknown>
-  // Phase 1 wins on conflict — HTML is more trustworthy for phones, emails, logo
   return { ...claude, ...phase1 }
 }
 
@@ -277,10 +295,15 @@ async function fetchHtml(url: string): Promise<{ html: string; finalUrl: string 
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-AU,en;q=0.9',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(12000),
       })
-      if (/accounts\.google\.com|consent\.google\.com/i.test(res.url)) continue
-      return { html: await res.text(), finalUrl: res.url }
+      if (/accounts\.google\.com|consent\.google\.com/i.test(res.url)) {
+        console.log('[extract-site] Redirected to Google consent page, trying next UA')
+        continue
+      }
+      const html = await res.text()
+      console.log(`[extract-site] Fetched ${res.url} — ${html.length} chars, status ${res.status}`)
+      return { html, finalUrl: res.url }
     } catch(e) { lastErr = e }
   }
   throw lastErr
@@ -317,10 +340,11 @@ export async function POST(req: NextRequest) {
 
   // ── Phase 1: always extract from HTML ────────────────────────────────────
   const phase1 = extractFromHtml(html, finalUrl)
+  console.log('[extract-site] Phase 1 found:', Object.keys(phase1))
 
-  // ── Phase 2: Claude enrichment (only if key present and page has content) ─
+  // ── Phase 2: Claude enrichment (only if key present + page has content) ──
   const pageText = visibleText(html)
-  const hasContent = pageText.length > 150
+  const hasContent = pageText.length > 100
   const hasClaudeKey = !!process.env.ANTHROPIC_API_KEY
 
   if (hasContent && hasClaudeKey) {
@@ -330,6 +354,7 @@ export async function POST(req: NextRequest) {
       metaTag(html, 'og:title')       && `OG title: ${metaTag(html, 'og:title')}`,
       metaTag(html, 'og:description') && `OG description: ${metaTag(html, 'og:description')}`,
       telLinks(html).length  && `Tel links: ${telLinks(html).join(', ')}`,
+      phonesFromRaw(html).length && `Phones found in HTML: ${phonesFromRaw(html).join(', ')}`,
       mailLinks(html).length && `Email links: ${mailLinks(html).join(', ')}`,
       socialLinks(html).facebook  && `Facebook: ${socialLinks(html).facebook}`,
       socialLinks(html).instagram && `Instagram: ${socialLinks(html).instagram}`,
@@ -340,18 +365,23 @@ export async function POST(req: NextRequest) {
     try {
       const merged = await enrichWithClaude(context, finalUrl, isGmb, phase1)
       const count = Object.values(merged).filter(v => v !== '' && v !== null && v !== undefined && (!Array.isArray(v) || v.length > 0)).length
+      console.log('[extract-site] Phase 2 merged fields:', count)
       if (count > 0) return NextResponse.json({ extracted: merged })
     } catch (err) {
       console.error('[extract-site] Claude failed, falling back to Phase 1:', err)
     }
+  } else {
+    console.log(`[extract-site] Skipping Phase 2 — hasContent:${hasContent} hasKey:${hasClaudeKey}`)
   }
 
-  // ── Return Phase 1 only (Claude skipped or failed) ───────────────────────
+  // ── Return Phase 1 only ───────────────────────────────────────────────────
   const count = Object.keys(phase1).length
+  console.log('[extract-site] Returning Phase 1 only —', count, 'fields')
+
   if (count === 0) {
     return NextResponse.json({
       error: isGmb
-        ? 'Google Business pages block automated access. Paste your business website URL instead — it will extract much more.'
+        ? 'Google Business pages require JavaScript to load — try pasting your business website URL instead, it extracts much more.'
         : 'No data could be extracted from that page. Make sure it is publicly accessible.',
     }, { status: 422 })
   }
