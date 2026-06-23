@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SiteForge AI — Websites for Australian Local Businesses",
-  description: "AI-powered websites for Australian tradies and local businesses. Live in 48 hours from $599.",
+  title: "SiteForge AI — Websites for Australian Cleaning Businesses",
+  description: "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month — no big upfront cost.",
+  openGraph: {
+    title: "SiteForge AI — Websites for Australian Cleaning Businesses",
+    description: "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month.",
+    type: "website",
+    locale: "en_AU",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -232,7 +232,7 @@ async function enrichWithClaude(
     ? 'NOTE: This is a Google Business Profile. Meta description may contain rating · category · address · phone separated by "·".\n'
     : ''
 
-  const prompt = `You are extracting business information for an Australian tradie/service business intake form.
+  const prompt = `You are extracting business information for an Australian cleaning business intake form.
 ${gmbNote}
 URL: ${finalUrl}
 

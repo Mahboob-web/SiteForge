@@ -510,7 +510,7 @@ export default function IntakeForm() {
           <h1 style={st.title}>Final <em style={{ color: '#c8f04b', fontStyle: 'italic' }}>details</em></h1>
           <p style={st.lbl}>Your plan</p>
           <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-            {([{ v:'starter', l:'Starter', p:'$599', f:'5 pages, 14 days' }, { v:'professional', l:'Professional', p:'$999', f:'20 suburb pages, 7 days' }, { v:'premium', l:'Premium', p:'$1,799', f:'40 suburbs, 48hrs' }]).map(pl => (
+            {([{ v:'starter', l:'Starter', p:'$99/mo', f:'No setup, 48hrs' }, { v:'professional', l:'Professional', p:'$149/mo', f:'$297 setup, Local SEO' }, { v:'premium', l:'Premium', p:'$249/mo', f:'$497 setup, Google Ads' }]).map(pl => (
               <button key={pl.v} onClick={() => update('plan', pl.v)} style={{ flex: 1, padding: '16px 8px', borderRadius: 12, border: '2px solid', borderColor: form.plan === pl.v ? '#c8f04b' : 'rgba(255,255,255,0.1)', background: form.plan === pl.v ? 'rgba(200,240,75,0.1)' : 'rgba(255,255,255,0.03)', color: 'white', cursor: 'pointer', fontFamily: 'Outfit,sans-serif', textAlign: 'center' }}>
                 <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 4 }}>{pl.l}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: form.plan === pl.v ? '#c8f04b' : 'white' }}>{pl.p}</div>
