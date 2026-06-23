@@ -86,7 +86,7 @@ function clientHtml(d: {
   <!-- Footer -->
   <tr><td style="background:#f9f9f9;border-top:1px solid #f0f0f0;padding:24px 40px;text-align:center;">
     <p style="margin:0 0 6px;font-size:12px;color:#aaaaaa;line-height:1.7;">Questions? Just reply to this email — we respond within 2 hours.</p>
-    <p style="margin:0;font-size:11px;color:#cccccc;">SiteForge AI · Websites for Australian Tradies</p>
+    <p style="margin:0;font-size:11px;color:#cccccc;">SiteForge AI · Websites for Australian Cleaning Businesses</p>
   </td></tr>
 
 </table>
@@ -159,7 +159,68 @@ function adminHtml(d: Record<string, unknown>) {
 </body></html>`
 }
 
+// ─── Lead notification (new quote-form lead — first touch) ─────────────────
+
+function leadHtml(d: {
+  firstName: string; lastName: string; bizName: string
+  phone: string; email: string; niche: string
+  city: string; plan: string; message: string
+}) {
+  const row = (label: string, value: string) => {
+    if (!value) return ''
+    return `<tr>
+      <td style="padding:9px 12px;font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;border-bottom:1px solid #f0f0f0;">${label}</td>
+      <td style="padding:9px 12px;font-size:13px;color:#111;border-bottom:1px solid #f0f0f0;word-break:break-word;">${value}</td>
+    </tr>`
+  }
+  const fullName = [d.firstName, d.lastName].filter(Boolean).join(' ')
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:24px;background:#f2f4f0;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;">
+  <tr><td style="background:#0a1a10;padding:20px 28px;border-radius:12px 12px 0 0;">
+    <span style="font-family:Georgia,serif;font-size:18px;color:#fff;">SiteForge</span>
+    <span style="font-size:13px;color:#c8f04b;margin-left:12px;">🔔 New Lead — Call Fast</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:24px 28px 10px;">
+    <p style="margin:0 0 4px;font-size:20px;font-weight:700;color:#0a1a10;">${d.bizName}</p>
+    <p style="margin:0 0 18px;font-size:14px;color:#666;">${fullName}${d.city ? ` · ${d.city}` : ''}</p>
+    <table cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-right:10px;"><a href="tel:${d.phone}" style="display:inline-block;background:#c8f04b;color:#0a1a10;text-decoration:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:9999px;">📞 Call ${d.phone}</a></td>
+        <td><a href="mailto:${d.email}" style="display:inline-block;background:#f0f0f0;color:#0a1a10;text-decoration:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:9999px;">✉ Email</a></td>
+      </tr>
+    </table>
+  </td></tr>
+  <tr><td style="background:#fff;border-radius:0 0 12px 12px;padding:10px 16px 16px;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      ${row('Service',       d.niche)}
+      ${row('Plan interest', d.plan)}
+      ${row('Phone',         d.phone)}
+      ${row('Email',         d.email)}
+      ${row('City',          d.city)}
+      ${row('Message',       d.message)}
+    </table>
+  </td></tr>
+  <tr><td style="padding:12px 0;text-align:center;font-size:11px;color:#aaa;">⚡ Speed-to-lead: the first to reply usually wins the job.</td></tr>
+</table>
+</body></html>`
+}
+
 // ─── Exported send functions ───────────────────────────────────────────────
+
+export async function sendLeadNotification(data: {
+  firstName: string; lastName: string; bizName: string
+  phone: string; email: string; niche: string
+  city: string; plan: string; message: string
+}) {
+  if (!process.env.RESEND_API_KEY) return
+  await resend.emails.send({
+    from:    FROM,
+    to:      ADMIN,
+    subject: `🔔 New lead: ${data.bizName} (${data.niche})`,
+    html:    leadHtml(data),
+  })
+}
 
 export async function sendClientConfirmation(data: {
   firstName: string

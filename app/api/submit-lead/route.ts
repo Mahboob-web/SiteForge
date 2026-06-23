@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
+import { sendLeadNotification } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -52,6 +53,23 @@ export async function POST(req: NextRequest) {
         { error: `Database error (${error.code}): ${error.message}` },
         { status: 500 }
       )
+    }
+
+    // Fire instant admin notification — never let an email failure break lead capture
+    try {
+      await sendLeadNotification({
+        firstName,
+        lastName: lastName || '',
+        bizName,
+        phone,
+        email,
+        niche,
+        city:    city    || '',
+        plan:    plan    || '',
+        message: message || '',
+      })
+    } catch (notifyErr) {
+      console.error('[submit-lead] notification failed (lead still saved):', notifyErr)
     }
 
     return NextResponse.json({
