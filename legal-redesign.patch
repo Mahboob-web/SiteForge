@@ -1,0 +1,556 @@
+diff --git a/app/_components/LegalShell.tsx b/app/_components/LegalShell.tsx
+new file mode 100644
+index 0000000..e53241f
+--- /dev/null
++++ b/app/_components/LegalShell.tsx
+@@ -0,0 +1,160 @@
++import Link from 'next/link'
++import type { ReactNode } from 'react'
++
++type Section = { id: string; heading: string; body: ReactNode }
++
++export default function LegalShell({
++  title,
++  lastUpdated,
++  intro,
++  sections,
++}: {
++  title: string
++  lastUpdated: string
++  intro?: ReactNode
++  sections: Section[]
++}) {
++  return (
++    <div className="legal-root">
++      <link
++        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600&family=Outfit:wght@300;400;500;600;700&display=swap"
++        rel="stylesheet"
++      />
++
++      {/* ── Header band ── */}
++      <header className="legal-header">
++        <div className="legal-wrap legal-nav">
++          <Link href="/" className="legal-logo">
++            <span style={{ color: '#c8f04b' }}>⚡</span>SiteForge <span style={{ color: '#CCFF00', fontFamily: 'Outfit, sans-serif', fontWeight: 700 }}>AI</span>
++          </Link>
++          <Link href="/" className="legal-back">← Back to site</Link>
++        </div>
++        <div className="legal-wrap legal-head-inner">
++          <p className="legal-eyebrow">Legal</p>
++          <h1 className="legal-title">{title}</h1>
++          <span className="legal-pill">
++            <span className="legal-dot" /> Last updated {lastUpdated}
++          </span>
++        </div>
++      </header>
++
++      {/* ── Body ── */}
++      <main className="legal-wrap legal-grid">
++        {/* Table of contents */}
++        <nav className="legal-toc" aria-label="On this page">
++          <p className="legal-toc-label">On this page</p>
++          <ol className="legal-toc-list">
++            {sections.map((s, i) => (
++              <li key={s.id}>
++                <a href={`#${s.id}`}>
++                  <span className="legal-toc-num">{String(i + 1).padStart(2, '0')}</span>
++                  <span>{s.heading}</span>
++                </a>
++              </li>
++            ))}
++          </ol>
++        </nav>
++
++        {/* Content */}
++        <article className="legal-content">
++          {intro && <div className="legal-intro">{intro}</div>}
++          {sections.map((s, i) => (
++            <section key={s.id} id={s.id} className="legal-section">
++              <h2>
++                <span className="legal-sec-num">{String(i + 1).padStart(2, '0')}</span>
++                {s.heading}
++              </h2>
++              {s.body}
++            </section>
++          ))}
++
++          <div className="legal-crosslinks">
++            <Link href="/privacy">Privacy Policy</Link>
++            <Link href="/terms">Terms of Service</Link>
++            <Link href="/refund">Refund Policy</Link>
++          </div>
++        </article>
++      </main>
++
++      <footer className="legal-foot">
++        <div className="legal-wrap">© {new Date().getFullYear()} SiteForge AI · Websites for Australian cleaning businesses</div>
++      </footer>
++
++      <style>{`
++        .legal-root {
++          background:#070d08; min-height:100vh; color:rgba(255,255,255,0.74);
++          font-family:'Outfit',sans-serif; -webkit-font-smoothing:antialiased;
++          scroll-behavior:smooth;
++        }
++        html { scroll-behavior:smooth; }
++        .legal-wrap { max-width:1080px; margin:0 auto; padding-left:clamp(20px,5vw,40px); padding-right:clamp(20px,5vw,40px); }
++
++        /* Header */
++        .legal-header {
++          position:relative; overflow:hidden;
++          background:
++            radial-gradient(120% 140% at 80% -20%, rgba(200,240,75,0.10) 0%, transparent 55%),
++            linear-gradient(180deg,#0c1a0d 0%,#070d08 100%);
++          border-bottom:1px solid rgba(255,255,255,0.07);
++        }
++        .legal-nav { display:flex; align-items:center; justify-content:space-between; padding-top:20px; padding-bottom:20px; }
++        .legal-logo { font-family:'Fraunces',serif; font-size:20px; font-weight:500; color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
++        .legal-back { font-size:13px; color:rgba(255,255,255,0.55); text-decoration:none; transition:color .2s; }
++        .legal-back:hover { color:#c8f04b; }
++        .legal-head-inner { padding-top:clamp(28px,5vw,52px); padding-bottom:clamp(36px,5vw,56px); }
++        .legal-eyebrow { font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#c8f04b; margin:0 0 16px; }
++        .legal-title { font-family:'Fraunces',serif; font-size:clamp(36px,6vw,60px); font-weight:400; letter-spacing:-0.035em; line-height:1.02; color:#fff; margin:0 0 22px; }
++        .legal-pill { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.14); border-radius:9999px; padding:6px 15px; }
++        .legal-dot { width:6px; height:6px; border-radius:50%; background:#c8f04b; box-shadow:0 0 8px rgba(200,240,75,0.8); }
++
++        /* Grid */
++        .legal-grid { display:grid; grid-template-columns:236px 1fr; gap:clamp(40px,6vw,72px); padding-top:clamp(40px,6vw,64px); padding-bottom:96px; }
++
++        /* TOC */
++        .legal-toc { position:sticky; top:28px; align-self:start; }
++        .legal-toc-label { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin:0 0 16px; }
++        .legal-toc-list { list-style:none; margin:0; padding:0; border-left:1px solid rgba(255,255,255,0.09); }
++        .legal-toc-list li { margin:0; }
++        .legal-toc-list a { display:flex; gap:11px; align-items:baseline; padding:7px 0 7px 18px; margin-left:-1px; border-left:1px solid transparent; font-size:13.5px; line-height:1.45; color:rgba(255,255,255,0.5); text-decoration:none; transition:color .18s, border-color .18s; }
++        .legal-toc-list a:hover { color:#fff; border-left-color:#c8f04b; }
++        .legal-toc-num { font-size:11px; font-weight:700; color:rgba(200,240,75,0.55); font-variant-numeric:tabular-nums; flex-shrink:0; }
++
++        /* Content */
++        .legal-content { max-width:680px; }
++        .legal-intro { font-size:16.5px; line-height:1.85; color:rgba(255,255,255,0.66); margin-bottom:8px; }
++        .legal-intro p { margin:0 0 18px; }
++        .legal-intro a, .legal-content a { color:#c8f04b; text-decoration:none; }
++        .legal-intro a:hover, .legal-content a:hover { text-decoration:underline; }
++
++        .legal-section { scroll-margin-top:24px; padding-top:34px; margin-top:34px; border-top:1px solid rgba(255,255,255,0.07); }
++        .legal-section:first-of-type { border-top:0; margin-top:14px; padding-top:0; }
++        .legal-section h2 { display:flex; gap:14px; align-items:baseline; font-family:'Fraunces',serif; font-size:24px; font-weight:500; letter-spacing:-0.02em; color:#fff; margin:0 0 16px; }
++        .legal-sec-num { font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; color:#c8f04b; font-variant-numeric:tabular-nums; line-height:1.9; flex-shrink:0; }
++        .legal-section h3 { font-size:16px; font-weight:700; color:rgba(255,255,255,0.92); margin:26px 0 8px; }
++        .legal-section p { font-size:15.5px; line-height:1.82; color:rgba(255,255,255,0.72); margin:0 0 16px; }
++        .legal-section ul { margin:0 0 18px; padding-left:4px; list-style:none; }
++        .legal-section li { position:relative; font-size:15.5px; line-height:1.75; color:rgba(255,255,255,0.72); margin:0 0 10px; padding-left:22px; }
++        .legal-section li::before { content:''; position:absolute; left:2px; top:11px; width:6px; height:6px; border-radius:50%; background:rgba(200,240,75,0.7); }
++        .legal-section strong { color:rgba(255,255,255,0.94); font-weight:600; }
++        .ph { color:#c8f04b; background:rgba(200,240,75,0.10); padding:1px 7px; border-radius:5px; font-size:13.5px; white-space:nowrap; }
++
++        /* Cross links */
++        .legal-crosslinks { display:flex; flex-wrap:wrap; gap:22px; margin-top:60px; padding-top:28px; border-top:1px solid rgba(255,255,255,0.08); }
++        .legal-crosslinks a { font-size:13.5px; color:rgba(255,255,255,0.55); text-decoration:none; transition:color .2s; }
++        .legal-crosslinks a:hover { color:#c8f04b; }
++
++        /* Footer */
++        .legal-foot { border-top:1px solid rgba(255,255,255,0.06); padding:26px 0; font-size:12.5px; color:rgba(255,255,255,0.3); text-align:center; }
++
++        @media (max-width:900px) {
++          .legal-grid { grid-template-columns:1fr; }
++          .legal-toc { position:static; border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:18px 20px; background:rgba(255,255,255,0.02); }
++          .legal-toc-list { border-left:0; }
++          .legal-toc-list a { padding-left:0; border-left:0; }
++          .legal-toc-list a:hover { border-left:0; }
++        }
++        @media (prefers-reduced-motion:reduce) { html, .legal-root { scroll-behavior:auto; } }
++      `}</style>
++    </div>
++  )
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index b13101f..5a94cec 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -706,10 +706,10 @@ export default function Home() {
+               © {new Date().getFullYear()} SiteForge AI. All rights reserved.{/* TODO: add real ABN here once registered, e.g. "ABN 12 345 678 901" */}
+             </p>
+             <div className="sf-footer-links">
+-              {['Privacy Policy','Terms of Service','Refund Policy'].map(l => (
+-                <a key={l} href="#" style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textDecoration:'none', transition:'color 0.2s' }}
+-                  onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}
+-                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.2)')}>{l}</a>
++              {[['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Refund Policy','/refund']].map(([label, href]) => (
++                <a key={label} href={href} style={{ fontSize:12, color:'rgba(255,255,255,0.5)', textDecoration:'none', transition:'color 0.2s' }}
++                  onMouseEnter={e => (e.currentTarget.style.color='#c8f04b')}
++                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}>{label}</a>
+               ))}
+             </div>
+           </div>
+diff --git a/app/privacy/page.tsx b/app/privacy/page.tsx
+new file mode 100644
+index 0000000..dd485cb
+--- /dev/null
++++ b/app/privacy/page.tsx
+@@ -0,0 +1,139 @@
++import type { Metadata } from 'next'
++import LegalShell from '../_components/LegalShell'
++
++export const metadata: Metadata = {
++  title: 'Privacy Policy — SiteForge AI',
++  description: 'How SiteForge AI collects, uses, stores and protects your personal information.',
++}
++
++export default function PrivacyPage() {
++  return (
++    <LegalShell
++      title="Privacy Policy"
++      lastUpdated="23 June 2026"
++      intro={
++        <>
++          <p>
++            This Privacy Policy explains how <span className="ph">[BUSINESS LEGAL NAME]</span> (ABN{' '}
++            <span className="ph">[ABN]</span>), trading as SiteForge AI (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;), collects, uses,
++            stores and discloses your personal information. We are committed to protecting your privacy in
++            accordance with the <strong>Privacy Act 1988 (Cth)</strong> and the <strong>Australian Privacy
++            Principles (APPs)</strong>.
++          </p>
++          <p>By using our website or submitting an enquiry, you consent to the practices described in this policy.</p>
++        </>
++      }
++      sections={[
++        {
++          id: 'collect',
++          heading: 'Information we collect',
++          body: (
++            <>
++              <p>We collect personal information that you provide to us directly, including when you complete our quote or intake forms. This may include:</p>
++              <ul>
++                <li>Your name and the name of your business</li>
++                <li>Contact details — phone number and email address</li>
++                <li>Business details — your trade/niche, service area or suburbs, ABN, and address</li>
++                <li>Any information you include in messages or enquiries to us</li>
++              </ul>
++              <p>We may also automatically collect technical information when you visit our website, such as your IP address, browser type, device information, and pages visited, through cookies and analytics tools.</p>
++            </>
++          ),
++        },
++        {
++          id: 'how',
++          heading: 'How we collect it',
++          body: <p>We collect personal information directly from you when you submit a form, email us, or otherwise communicate with us. We collect technical information automatically through your use of our website.</p>,
++        },
++        {
++          id: 'use',
++          heading: 'Why we collect and how we use it',
++          body: (
++            <>
++              <p>We use your personal information to:</p>
++              <ul>
++                <li>Respond to your enquiry and provide you with a quote</li>
++                <li>Build, deliver, host and maintain your website and related services</li>
++                <li>Communicate with you about your account, project and subscription</li>
++                <li>Send you service-related emails (such as confirmations and updates)</li>
++                <li>Improve our website and services</li>
++                <li>Comply with our legal obligations</li>
++              </ul>
++            </>
++          ),
++        },
++        {
++          id: 'disclosure',
++          heading: 'Disclosure to third parties',
++          body: (
++            <>
++              <p>We do not sell your personal information. We share it only with trusted service providers who help us operate our business, including:</p>
++              <ul>
++                <li><strong>Supabase</strong> — secure database hosting for your enquiry and project data</li>
++                <li><strong>Vercel</strong> — website and application hosting</li>
++                <li><strong>Resend</strong> — transactional email delivery</li>
++                <li><strong>Google Analytics</strong> — website usage analytics</li>
++              </ul>
++              <p>We may also disclose your information where required or authorised by law.</p>
++            </>
++          ),
++        },
++        {
++          id: 'overseas',
++          heading: 'Overseas storage and disclosure',
++          body: (
++            <p>
++              Some of our service providers store or process data outside Australia. In particular, our database
++              may be hosted in <strong>Japan</strong>, and hosting, email and analytics providers may store data in
++              the <strong>United States</strong> and other countries. By providing your information, you acknowledge
++              that it may be stored or processed overseas. We take reasonable steps to ensure these providers handle
++              your information consistently with the Australian Privacy Principles.
++            </p>
++          ),
++        },
++        {
++          id: 'cookies',
++          heading: 'Cookies and analytics',
++          body: <p>Our website uses cookies and similar technologies to make the site work and to understand how visitors use it. You can disable cookies in your browser settings, though some features may not function as intended. We may use Google Analytics, which collects anonymised usage data subject to Google&apos;s own privacy policy.</p>,
++        },
++        {
++          id: 'security',
++          heading: 'Data security',
++          body: <p>We take reasonable steps to protect your personal information from misuse, loss, and unauthorised access, including using reputable providers, encrypted connections (SSL/TLS), and restricted access controls. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.</p>,
++        },
++        {
++          id: 'access',
++          heading: 'Access and correction',
++          body: <p>You may request access to the personal information we hold about you, or ask us to correct it if it is inaccurate, out of date or incomplete. To make a request, contact us using the details below. We will respond within a reasonable time.</p>,
++        },
++        {
++          id: 'retention',
++          heading: 'Data retention',
++          body: <p>We retain your personal information only for as long as necessary to provide our services, comply with our legal obligations, resolve disputes, and enforce our agreements. When it is no longer needed, we take reasonable steps to delete or de-identify it.</p>,
++        },
++        {
++          id: 'complaints',
++          heading: 'Complaints',
++          body: (
++            <p>
++              If you believe we have breached the Australian Privacy Principles or mishandled your information,
++              please contact us first so we can address your concern. If you are not satisfied with our response,
++              you may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) at{' '}
++              <a href="https://www.oaic.gov.au" target="_blank" rel="noopener noreferrer">www.oaic.gov.au</a>.
++            </p>
++          ),
++        },
++        {
++          id: 'changes',
++          heading: 'Changes to this policy',
++          body: <p>We may update this Privacy Policy from time to time. The current version will always be available on this page, with the &ldquo;last updated&rdquo; date shown above.</p>,
++        },
++        {
++          id: 'contact',
++          heading: 'Contact us',
++          body: <p>For any privacy questions, requests or complaints, contact us at <a href="mailto:hello@siteforge.com.au">hello@siteforge.com.au</a>.</p>,
++        },
++      ]}
++    />
++  )
++}
+diff --git a/app/refund/page.tsx b/app/refund/page.tsx
+new file mode 100644
+index 0000000..d0ac7a0
+--- /dev/null
++++ b/app/refund/page.tsx
+@@ -0,0 +1,86 @@
++import type { Metadata } from 'next'
++import LegalShell from '../_components/LegalShell'
++
++export const metadata: Metadata = {
++  title: 'Refund Policy — SiteForge AI',
++  description: 'SiteForge AI refund and cancellation policy for website subscription services.',
++}
++
++export default function RefundPage() {
++  return (
++    <LegalShell
++      title="Refund Policy"
++      lastUpdated="23 June 2026"
++      intro={
++        <p>
++          This Refund Policy applies to the subscription services provided by{' '}
++          <span className="ph">[BUSINESS LEGAL NAME]</span> (ABN <span className="ph">[ABN]</span>), trading as
++          SiteForge AI. It should be read together with our <a href="/terms">Terms of Service</a>.
++        </p>
++      }
++      sections={[
++        {
++          id: 'overview',
++          heading: 'Overview',
++          body: <p>Our services are provided on a subscription basis. Because work begins quickly and our plans bundle setup, hosting and ongoing service, the following terms apply to refunds and cancellations. This policy does not limit your rights under the Australian Consumer Law.</p>,
++        },
++        {
++          id: 'setup',
++          heading: 'Setup fees',
++          body: <p>Setup fees cover the design and build of your website. Once work on your site has commenced, setup fees are <strong>non-refundable</strong>, as the work has been performed.</p>,
++        },
++        {
++          id: 'monthly',
++          heading: 'Monthly subscription fees',
++          body: (
++            <ul>
++              <li>Monthly fees are charged in advance for the upcoming service period.</li>
++              <li>Fees already paid for the current period are <strong>not pro-rated or refunded</strong> if you cancel partway through a billing cycle.</li>
++              <li>After cancellation takes effect, you will not be charged for future periods.</li>
++            </ul>
++          ),
++        },
++        {
++          id: 'cancellation',
++          heading: 'Cancellation',
++          body: (
++            <p>
++              To cancel, email <a href="mailto:hello@siteforge.com.au">hello@siteforge.com.au</a> giving at least{' '}
++              <strong>30 days&apos; notice</strong>. Your subscription — and your hosted website — will remain active until
++              the end of your notice period and any applicable minimum term, after which the site may be taken offline.
++            </p>
++          ),
++        },
++        {
++          id: 'acl',
++          heading: 'Your rights under the Australian Consumer Law',
++          body: (
++            <p>
++              Our services come with guarantees that cannot be excluded under the <strong>Australian Consumer Law</strong>.
++              If there is a <strong>major failure</strong> with our service, you may be entitled to a refund or to cancel,
++              and to compensation for reasonably foreseeable loss. For a problem that is not a major failure, we will
++              remedy it within a reasonable time; if we do not, you may be entitled to a refund of the difference in value.
++              Nothing in this policy excludes these rights.
++            </p>
++          ),
++        },
++        {
++          id: 'request',
++          heading: 'How to request a refund',
++          body: (
++            <p>
++              To request a refund or raise a concern, contact us at{' '}
++              <a href="mailto:hello@siteforge.com.au">hello@siteforge.com.au</a> with your business name and a description
++              of the issue. We aim to respond within 2 business days and will work with you to resolve it fairly.
++            </p>
++          ),
++        },
++        {
++          id: 'changes',
++          heading: 'Changes to this policy',
++          body: <p>We may update this Refund Policy from time to time. The current version will always be available on this page.</p>,
++        },
++      ]}
++    />
++  )
++}
+diff --git a/app/terms/page.tsx b/app/terms/page.tsx
+new file mode 100644
+index 0000000..6b2ae53
+--- /dev/null
++++ b/app/terms/page.tsx
+@@ -0,0 +1,128 @@
++import type { Metadata } from 'next'
++import LegalShell from '../_components/LegalShell'
++
++export const metadata: Metadata = {
++  title: 'Terms of Service — SiteForge AI',
++  description: 'The terms governing SiteForge AI website subscription services.',
++}
++
++export default function TermsPage() {
++  return (
++    <LegalShell
++      title="Terms of Service"
++      lastUpdated="23 June 2026"
++      intro={
++        <p>
++          These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the website services provided by{' '}
++          <span className="ph">[BUSINESS LEGAL NAME]</span> (ABN <span className="ph">[ABN]</span>), trading as
++          SiteForge AI (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;). By subscribing to or using our services, you agree to these Terms.
++        </p>
++      }
++      sections={[
++        {
++          id: 'services',
++          heading: 'Our services',
++          body: <p>SiteForge AI provides a Website-as-a-Service offering: we design, build, host and maintain a website for your business, provided on a subscription basis. The specific inclusions depend on the plan you select.</p>,
++        },
++        {
++          id: 'fees',
++          heading: 'Subscription and fees',
++          body: (
++            <ul>
++              <li>Our services are billed as a recurring <strong>monthly subscription</strong>, plus any one-off setup fee applicable to your chosen plan.</li>
++              <li>Fees are stated in Australian dollars (AUD) and, where applicable, are inclusive or exclusive of GST as indicated at the time of sign-up.</li>
++              <li>Payment is processed via our third-party payment provider. You authorise us to charge your nominated payment method on a recurring basis until cancelled.</li>
++              <li>If a payment fails, we may suspend your website until the amount owing is paid.</li>
++            </ul>
++          ),
++        },
++        {
++          id: 'term',
++          heading: 'Minimum term and cancellation',
++          body: (
++            <ul>
++              <li>Subscriptions run for an initial minimum term of <span className="ph">[e.g. 6 months]</span>, after which they continue on a month-to-month basis.</li>
++              <li>You may cancel by giving at least <strong>30 days&apos; notice</strong> in writing to <a href="mailto:hello@siteforge.com.au">hello@siteforge.com.au</a>.</li>
++              <li>Setup fees are non-refundable once work has commenced. Monthly fees already paid are not pro-rated or refunded on cancellation, except where required by the Australian Consumer Law.</li>
++            </ul>
++          ),
++        },
++        {
++          id: 'included',
++          heading: 'What\u2019s included',
++          body: <p>While your subscription is active, we provide hosting, SSL, security, and the ongoing updates described in your plan (such as content tweaks and additional pages). Major redesigns or work outside your plan may be quoted separately.</p>,
++        },
++        {
++          id: 'responsibilities',
++          heading: 'Your responsibilities',
++          body: (
++            <ul>
++              <li>You agree to provide accurate, complete and lawful information and content for your website.</li>
++              <li>You are responsible for ensuring any materials you supply (text, images, logos, reviews) do not infringe third-party rights and are not misleading or unlawful.</li>
++              <li>You must not use our services for any unlawful, harmful, or deceptive purpose.</li>
++            </ul>
++          ),
++        },
++        {
++          id: 'ownership',
++          heading: 'Website ownership and hosting',
++          body: (
++            <p>
++              Because this is a managed subscription service, your website is hosted and maintained within our
++              infrastructure while your subscription is active. The content you supply remains yours. On cancellation,
++              the hosted website may be taken offline. Any arrangement to transfer or export the site is at our
++              discretion and may be subject to a separate fee, as agreed in writing.
++            </p>
++          ),
++        },
++        {
++          id: 'domains',
++          heading: 'Domains',
++          body: <p>We can help you register or connect a domain name. Where you own a domain, you remain responsible for its registration and renewal. Domain registration fees are separate from your subscription.</p>,
++        },
++        {
++          id: 'disclaimers',
++          heading: 'Disclaimers',
++          body: <p>We provide our services with reasonable care and skill. However, we do not guarantee specific search rankings, traffic, leads, or business outcomes, as these depend on factors outside our control.</p>,
++        },
++        {
++          id: 'acl',
++          heading: 'Australian Consumer Law',
++          body: (
++            <p>
++              Nothing in these Terms excludes, restricts or modifies any consumer guarantee, right or remedy that you
++              have under the <strong>Australian Consumer Law</strong> and that cannot lawfully be excluded. Where our
++              liability cannot be excluded, it is limited (to the extent permitted) to re-supplying the services or
++              paying the cost of having the services re-supplied.
++            </p>
++          ),
++        },
++        {
++          id: 'liability',
++          heading: 'Limitation of liability',
++          body: <p>To the maximum extent permitted by law, we are not liable for any indirect, incidental, or consequential loss arising from your use of our services. Our total liability to you is limited to the amount you have paid us in the 12 months preceding the relevant claim.</p>,
++        },
++        {
++          id: 'termination',
++          heading: 'Termination by us',
++          body: <p>We may suspend or terminate your service if you breach these Terms, fail to pay, or use the service unlawfully. We will give reasonable notice where practicable.</p>,
++        },
++        {
++          id: 'law',
++          heading: 'Governing law',
++          body: <p>These Terms are governed by the laws of <span className="ph">[STATE/TERRITORY]</span>, Australia, and you submit to the non-exclusive jurisdiction of its courts.</p>,
++        },
++        {
++          id: 'changes',
++          heading: 'Changes to these Terms',
++          body: <p>We may update these Terms from time to time. The current version will always be available on this page. Continued use of our services after changes constitutes acceptance.</p>,
++        },
++        {
++          id: 'contact',
++          heading: 'Contact',
++          body: <p>Questions about these Terms? Email <a href="mailto:hello@siteforge.com.au">hello@siteforge.com.au</a>.</p>,
++        },
++      ]}
++    />
++  )
++}
