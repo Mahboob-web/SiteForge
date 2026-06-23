@@ -707,9 +707,9 @@ export default function Home() {
             </p>
             <div className="sf-footer-links">
               {[['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Refund Policy','/refund']].map(([label, href]) => (
-                <a key={label} href={href} style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textDecoration:'none', transition:'color 0.2s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}
-                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.2)')}>{label}</a>
+                <a key={label} href={href} style={{ fontSize:12, color:'rgba(255,255,255,0.5)', textDecoration:'none', transition:'color 0.2s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color='#c8f04b')}
+                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}>{label}</a>
               ))}
             </div>
           </div>
