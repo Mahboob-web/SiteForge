@@ -706,10 +706,10 @@ export default function Home() {
               © {new Date().getFullYear()} SiteForge AI. All rights reserved.{/* TODO: add real ABN here once registered, e.g. "ABN 12 345 678 901" */}
             </p>
             <div className="sf-footer-links">
-              {['Privacy Policy','Terms of Service','Refund Policy'].map(l => (
-                <a key={l} href="#" style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textDecoration:'none', transition:'color 0.2s' }}
+              {[['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Refund Policy','/refund']].map(([label, href]) => (
+                <a key={label} href={href} style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textDecoration:'none', transition:'color 0.2s' }}
                   onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}
-                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.2)')}>{l}</a>
+                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.2)')}>{label}</a>
               ))}
             </div>
           </div>
