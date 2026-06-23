@@ -1,0 +1,314 @@
+diff --git a/app/api/extract-site/route.ts b/app/api/extract-site/route.ts
+index e551903..fc8c537 100644
+--- a/app/api/extract-site/route.ts
++++ b/app/api/extract-site/route.ts
+@@ -232,7 +232,7 @@ async function enrichWithClaude(
+     ? 'NOTE: This is a Google Business Profile. Meta description may contain rating · category · address · phone separated by "·".\n'
+     : ''
+ 
+-  const prompt = `You are extracting business information for an Australian tradie/service business intake form.
++  const prompt = `You are extracting business information for an Australian cleaning business intake form.
+ ${gmbNote}
+ URL: ${finalUrl}
+ 
+diff --git a/app/intake/IntakeForm.tsx b/app/intake/IntakeForm.tsx
+index a34a60b..eede2d2 100644
+--- a/app/intake/IntakeForm.tsx
++++ b/app/intake/IntakeForm.tsx
+@@ -510,7 +510,7 @@ export default function IntakeForm() {
+           <h1 style={st.title}>Final <em style={{ color: '#c8f04b', fontStyle: 'italic' }}>details</em></h1>
+           <p style={st.lbl}>Your plan</p>
+           <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+-            {([{ v:'starter', l:'Starter', p:'$599', f:'5 pages, 14 days' }, { v:'professional', l:'Professional', p:'$999', f:'20 suburb pages, 7 days' }, { v:'premium', l:'Premium', p:'$1,799', f:'40 suburbs, 48hrs' }]).map(pl => (
++            {([{ v:'starter', l:'Starter', p:'$99/mo', f:'No setup, 48hrs' }, { v:'professional', l:'Professional', p:'$149/mo', f:'$297 setup, Local SEO' }, { v:'premium', l:'Premium', p:'$249/mo', f:'$497 setup, Google Ads' }]).map(pl => (
+               <button key={pl.v} onClick={() => update('plan', pl.v)} style={{ flex: 1, padding: '16px 8px', borderRadius: 12, border: '2px solid', borderColor: form.plan === pl.v ? '#c8f04b' : 'rgba(255,255,255,0.1)', background: form.plan === pl.v ? 'rgba(200,240,75,0.1)' : 'rgba(255,255,255,0.03)', color: 'white', cursor: 'pointer', fontFamily: 'Outfit,sans-serif', textAlign: 'center' }}>
+                 <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 4 }}>{pl.l}</div>
+                 <div style={{ fontSize: 22, fontWeight: 700, color: form.plan === pl.v ? '#c8f04b' : 'white' }}>{pl.p}</div>
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 3e8b4ce..dc4b5be 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -2,8 +2,14 @@ import type { Metadata } from "next";
+ import "./globals.css";
+ 
+ export const metadata: Metadata = {
+-  title: "SiteForge AI — Websites for Australian Local Businesses",
+-  description: "AI-powered websites for Australian tradies and local businesses. Live in 48 hours from $599.",
++  title: "SiteForge AI — Websites for Australian Cleaning Businesses",
++  description: "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month — no big upfront cost.",
++  openGraph: {
++    title: "SiteForge AI — Websites for Australian Cleaning Businesses",
++    description: "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month.",
++    type: "website",
++    locale: "en_AU",
++  },
+ };
+ 
+ export default function RootLayout({ children }: { children: React.ReactNode }) {
+diff --git a/app/page.tsx b/app/page.tsx
+index 29a69e3..b13101f 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -13,24 +13,24 @@ function MockBrowser() {
+             {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} style={{ width:10, height:10, borderRadius:'50%', background:c }} />)}
+           </div>
+           <div style={{ flex:1, background:'rgba(255,255,255,0.06)', borderRadius:5, padding:'4px 12px', fontSize:11, color:'rgba(255,255,255,0.35)', fontFamily:'Outfit, sans-serif' }}>
+-            sydneyplumbing.com.au
++            bondcleaningsydney.com.au
+           </div>
+         </div>
+         {/* Mini website */}
+         <div style={{ background:'#0d1a0f', padding:20 }}>
+           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22, padding:'8px 14px', background:'rgba(255,255,255,0.03)', borderRadius:8, border:'1px solid rgba(255,255,255,0.06)' }}>
+-            <span style={{ fontSize:13, fontWeight:700, color:'#c8f04b', fontFamily:'Outfit, sans-serif' }}>⚡ Sydney Plumbing</span>
++            <span style={{ fontSize:13, fontWeight:700, color:'#c8f04b', fontFamily:'Outfit, sans-serif' }}>✨ SparkleClean</span>
+             <span style={{ fontSize:10, fontWeight:700, background:'#c8f04b', color:'#0d1a0f', borderRadius:9999, padding:'4px 12px', fontFamily:'Outfit, sans-serif' }}>Get Quote</span>
+           </div>
+           <div style={{ padding:'0 4px 8px' }}>
+-            <h3 style={{ fontFamily:'Fraunces, serif', fontSize:20, fontWeight:700, color:'white', margin:'0 0 8px', lineHeight:1.2 }}>Licensed Plumbers<br/>Across Sydney</h3>
+-            <p style={{ fontSize:11, color:'rgba(255,255,255,0.38)', margin:'0 0 16px', fontFamily:'Outfit, sans-serif' }}>Emergency callouts · Hot water · Gas fitting</p>
++            <h3 style={{ fontFamily:'Fraunces, serif', fontSize:20, fontWeight:700, color:'white', margin:'0 0 8px', lineHeight:1.2 }}>Bond Cleaning<br/>Across Sydney</h3>
++            <p style={{ fontSize:11, color:'rgba(255,255,255,0.38)', margin:'0 0 16px', fontFamily:'Outfit, sans-serif' }}>Bond-back guarantee · End of lease · Carpet steam</p>
+             <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+               <span style={{ fontSize:10, fontWeight:700, background:'#c8f04b', color:'#0d1a0f', borderRadius:9999, padding:'6px 14px', fontFamily:'Outfit, sans-serif', whiteSpace:'nowrap' as const }}>Get a Free Quote</span>
+               <span style={{ fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.55)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:9999, padding:'6px 14px', fontFamily:'Outfit, sans-serif', whiteSpace:'nowrap' as const }}>See Our Work</span>
+             </div>
+             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+-              {[{ icon:'🔧', title:'Emergency' },{ icon:'🔥', title:'Gas Fitting' },{ icon:'🚿', title:'Renovations' }].map(c => (
++              {[{ icon:'✨', title:'Bond Clean' },{ icon:'🛏️', title:'End of Lease' },{ icon:'🧼', title:'Carpet' }].map(c => (
+                 <div key={c.title} style={{ background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'12px 10px', border:'1px solid rgba(255,255,255,0.07)' }}>
+                   <div style={{ fontSize:16, marginBottom:6 }}>{c.icon}</div>
+                   <div style={{ fontSize:10, fontWeight:700, color:'white', marginBottom:3, fontFamily:'Outfit, sans-serif' }}>{c.title}</div>
+@@ -47,14 +47,14 @@ function MockBrowser() {
+ 
+ // ─── Data ──────────────────────────────────────────────────────────
+ const STEPS = [
+-  { n:'01', icon:'📋', title:'Tell us about your business',   desc:"A fast intake form captures your services, trade, and suburb coverage — takes under 10 minutes." },
++  { n:'01', icon:'📋', title:'Tell us about your business',   desc:"A fast intake form captures your cleaning services, niche, and suburb coverage — takes under 10 minutes." },
+   { n:'02', icon:'🤖', title:'AI writes your website',         desc:"We generate polished copy, suburb landing pages, and service listings — all SEO-optimised." },
+   { n:'03', icon:'⚡', title:'Review your staging site',       desc:"Approve on a private staging link or request one quick revision before we go live." },
+   { n:'04', icon:'🚀', title:'Go live with style',             desc:"We deploy to Vercel, connect your domain, and submit your site to Google Search Console." },
+ ]
+ 
+ const FEATURES = [
+-  { icon:'🎨', title:'Premium Design',       desc:'Hand-crafted template adapted to your trade and brand colours.' },
++  { icon:'🎨', title:'Premium Design',       desc:'Hand-crafted template adapted to your cleaning business and brand colours.' },
+   { icon:'📍', title:'Suburb Landing Pages', desc:"Unique SEO pages for every suburb you service — not copy-paste." },
+   { icon:'✍️', title:'AI Copywriting',        desc:'Human-reviewed AI copy that sounds like you, not a robot.' },
+   { icon:'📱', title:'Mobile First',          desc:'Looks flawless on every phone, tablet, and desktop size.' },
+@@ -62,43 +62,45 @@ const FEATURES = [
+   { icon:'⚡', title:'48-Hour Delivery',      desc:'Premium package sites go from brief to live in two days flat.' },
+   { icon:'📅', title:'Booking Integration',   desc:'Connect Calendly, Acuity, or your preferred booking tool.' },
+   { icon:'🔒', title:'SSL + Hosting',         desc:"Enterprise-grade Vercel hosting with free SSL — always fast." },
+-  { icon:'✏️', title:'Free Revision Round',   desc:'One free change request before launch — no hidden extras.' },
++  { icon:'✏️', title:'Ongoing Updates',      desc:'Content tweaks and new suburb pages included while you subscribe.' },
+   { icon:'📊', title:'Google Analytics',      desc:'GA4 and Search Console set up and connected on launch day.' },
+   { icon:'💬', title:'WhatsApp / Call CTA',   desc:'Click-to-call and WhatsApp buttons drive instant enquiries.' },
+   { icon:'🌐', title:'Domain Connection',     desc:"We handle the DNS so you don't have to touch a single setting." },
+ ]
+ 
++// ⚠️ PLACEHOLDER REVIEWS — replace with REAL client testimonials before launch.
++// Fake/unverified reviews breach the Australian Consumer Law (ACCC) and can carry penalties.
+ const TESTIMONIALS = [
+-  { quote:"I was sceptical about AI-built sites but the result blew me away. Suburb pages are ranking already and I've had three new quote requests this week alone.", name:'Dave Kowalski', co:'D&K Plumbing',       city:'Sydney',    init:'DK', rating:5 },
+-  { quote:"Got my new landscaping site live in 36 hours. The content is spot-on and my clients say it looks way more professional than my old one. 10/10.",           name:'Mel Torres',   co:'TorresScapes',       city:'Melbourne', init:'MT', rating:5 },
+-  { quote:"SiteForge handled everything — copy, SEO, domain, the lot. I just filled in the form and woke up to a live website. Insane value for the price.",          name:'Jason Nguyen', co:'Nguyen Electrical',  city:'Brisbane',  init:'JN', rating:5 },
++  { quote:"Bond-back guarantee front and centre, quote form on every page — I get enquiries straight to my phone now instead of chasing them.", name:'Sample Client', co:'Bond Cleaning Co.', city:'Sydney',    init:'BC', rating:5 },
++  { quote:"Site was live in two days and the suburb pages started showing up on Google within the first few weeks. Looks far more professional than my old one.", name:'Sample Client', co:'End of Lease Pros', city:'Melbourne', init:'EL', rating:5 },
++  { quote:"I filled in one form and they handled the copy, photos, domain and hosting. Easiest marketing decision I've made for my cleaning business.", name:'Sample Client', co:'Sparkle Domestic',  city:'Brisbane',  init:'SD', rating:5 },
+ ]
+ 
+ const PLANS = [
+   {
+-    tier:'Starter', price:'599', delivery:'14-DAY DELIVERY', popular:false,
+-    desc:'Perfect for local tradies who need a clean, professional web presence fast.',
+-    features:['5-page website','5 suburb landing pages','SEO-ready copy','Mobile optimised design','SSL + Vercel hosting','Google Search Console setup'],
++    tier:'Starter', price:'99', setup:'No setup fee', delivery:'48-HOUR LAUNCH', popular:false,
++    desc:'For solo cleaners who need a professional, lead-getting site with zero upfront cost.',
++    features:['5-page cleaning website','Quote / booking form','Hosting, SSL & maintenance','Mobile-first design','Click-to-call & WhatsApp','Google Search Console setup'],
+   },
+   {
+-    tier:'Professional', price:'999', delivery:'7-DAY DELIVERY', popular:true,
+-    desc:'Best value for contractors who want a complete local marketing machine.',
+-    features:['10-page website','20 suburb landing pages','Schema markup + structured data','Blog + content hub setup','Booking widget integration','GA4 + Search Console'],
++    tier:'Professional', price:'149', setup:'A$297 setup', delivery:'48-HOUR LAUNCH', popular:true,
++    desc:'For growing cleaning businesses that want to rank locally and capture more bookings.',
++    features:['Everything in Starter','Local SEO + Google Business setup','5 suburb landing pages','Schema markup + structured data','Monthly performance report','GA4 + Search Console'],
+   },
+   {
+-    tier:'Premium', price:'1,799', delivery:'48-HOUR DELIVERY', popular:false,
+-    desc:'Fastest launch. Priority support, booking setup, and maximum suburb coverage.',
+-    features:['15-page website','40 suburb landing pages','Priority build queue','Booking + CRM integration','WhatsApp + call tracking','Everything in Professional'],
++    tier:'Premium', price:'249', setup:'A$497 setup', delivery:'48-HOUR LAUNCH', popular:false,
++    desc:'For cleaning businesses that want maximum suburb coverage and managed Google Ads.',
++    features:['Everything in Professional','Google Ads management','Unlimited suburb pages','Booking + CRM integration','Call & lead tracking','Priority support'],
+   },
+ ]
+ 
+ const FAQS = [
+-  { q:'How long does it really take to build my website?',       a:"Our Starter plan takes up to 14 days. Professional is 7 days, and Premium is 48 hours from the moment you complete your intake form. Most clients receive their staging link within 15 minutes of our team starting." },
+-  { q:'Can I request changes after the website is launched?',    a:"Every plan includes one free revision round before launch. After that we offer a low-cost monthly retainer for ongoing changes, new suburb pages, and content updates." },
+-  { q:'Do you handle hosting and domain setup?',                 a:"Yes. We deploy to Vercel's free tier (enterprise-grade and globally fast) and connect your domain. If you don't have a domain yet, we'll help you register one for around $15–25/year." },
+-  { q:'Is the AI-generated content actually good quality?',      a:"Every piece of copy is reviewed by our team before you see it. The AI writes the first draft using your intake answers, and we refine it to make sure it sounds natural, professional, and specific to your business." },
+-  { q:'What if I already have a domain?',                        a:"No problem. We connect your existing domain to the new Vercel deployment. If you're migrating from an existing site, we handle the transition to avoid any downtime." },
+-  { q:'Is there a lock-in contract?',                            a:"None at all. You own the code, the domain, and all the content. You can take your site to any host or developer at any time. We earn your loyalty through quality, not contracts." },
++  { q:'How long does it really take to build my website?',       a:"Once you complete your intake form, your site goes live within 48 hours. Most clients receive their private staging link within 15 minutes of our team starting." },
++  { q:'How does the monthly subscription work?',                 a:"You pay a low monthly fee that covers your website, hosting, SSL, security, and ongoing updates — no large upfront build cost. Think of it like Netflix for your business website: it stays live, fast, and up to date for as long as you subscribe." },
++  { q:'Can I request changes after launch?',                     a:"Yes. Content tweaks and new suburb pages are included while your subscription is active — just email us. Larger redesigns can be quoted separately." },
++  { q:'Do you handle hosting and domain setup?',                 a:"Yes. Hosting, SSL, and DNS are all included and managed for you. If you don't have a domain yet, we'll help you register one for around $15–25/year." },
++  { q:'Is the AI-generated content actually good quality?',      a:"Every piece of copy is reviewed by our team before you see it. The AI writes the first draft from your intake answers, and we refine it so it sounds natural, local, and specific to your cleaning business." },
++  { q:'Is there a contract, and can I cancel?',                  a:"Plans run on a short minimum term to cover setup, then continue month to month. You can cancel with 30 days' notice. Because this is a managed subscription, the live site stays hosted with us while you're subscribed — we earn your loyalty through results, not lock-in tricks." },
+ ]
+ 
+ // ─── Navbar ────────────────────────────────────────────────────────
+@@ -317,7 +319,7 @@ export default function Home() {
+         <div className="sf-hero-left">
+           <div className="reveal" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(200,240,75,0.08)', border:'1px solid rgba(200,240,75,0.24)', padding:'7px 18px', borderRadius:9999, marginBottom:32, boxShadow:'0 0 20px rgba(200,240,75,0.08)' }}>
+             <span style={{ width:7, height:7, borderRadius:'50%', background:'#c8f04b', display:'inline-block', flexShrink:0, animation:'pulse 2s infinite' }} />
+-            <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:'#c8f04b' }}>AI-BUILT WEBSITES FOR AUSTRALIAN TRADIES</span>
++            <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:'#c8f04b' }}>AI-BUILT WEBSITES FOR AUSTRALIAN CLEANING BUSINESSES</span>
+           </div>
+ 
+           <h1 className="reveal reveal-delay-1" style={{ fontFamily:'Fraunces, serif', fontSize:'clamp(40px,6.5vw,84px)', fontWeight:800, lineHeight:0.97, letterSpacing:'-0.04em', margin:'0 0 28px' }}>
+@@ -325,7 +327,7 @@ export default function Home() {
+           </h1>
+ 
+           <p className="reveal reveal-delay-2" style={{ fontSize:'clamp(16px,1.9vw,18px)', color:'rgba(255,255,255,0.52)', maxWidth:500, margin:'0 0 44px', lineHeight:1.88 }}>
+-            Premium local websites built for tradies, contractors and service businesses — content, SEO, suburb pages and full launch support included.
++            Lead-getting websites built for Australian cleaning businesses — bond, end-of-lease, commercial and more. Copy, SEO, suburb pages and hosting included, from A$99/month.
+           </p>
+ 
+           <div className="reveal reveal-delay-3" style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:32 }}>
+@@ -340,7 +342,7 @@ export default function Home() {
+           </div>
+ 
+           <div className="reveal reveal-delay-4" style={{ display:'flex', gap:24, flexWrap:'wrap' }}>
+-            {['No lock-in contracts','Free revision included','250+ sites delivered'].map(t => (
++            {['$0 setup on Starter','Live in 48 hours','Australian-owned & run'].map(t => (
+               <span key={t} style={{ fontSize:13, color:'rgba(255,255,255,0.48)', display:'flex', alignItems:'center', gap:7, letterSpacing:'0.005em' }}>
+                 <span style={{ color:'#c8f04b', fontWeight:800, fontSize:12 }}>✓</span> {t}
+               </span>
+@@ -357,10 +359,10 @@ export default function Home() {
+       <div ref={statsRef} style={{ background:'#0c1a0d', borderTop:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+         <div className="sf-inner sf-stats-grid">
+           {[
+-            { val:250, suf:'+',   pre:'',  label:'Sites delivered',    sub:'for Australian tradies'  },
+-            { val:48,  suf:'hrs', pre:'',  label:'Premium turnaround', sub:'from brief to live'       },
+-            { val:599, suf:'',    pre:'$', label:'Starting price',     sub:'all-in, no hidden fees'  },
+-            { val:100, suf:'%',   pre:'',  label:'AU local focus',     sub:'tradies only, always'    },
++            { val:48,  suf:'hrs', pre:'',  label:'Launch time',      sub:'from brief to live'      },
++            { val:99,  suf:'',    pre:'$', label:'From / month',     sub:'no big upfront cost'     },
++            { val:7,   suf:'',    pre:'',  label:'Days a week',      sub:'support & updates'       },
++            { val:100, suf:'%',   pre:'',  label:'Cleaning focus',   sub:'one niche, done right'   },
+           ].map((s, i) => (
+             <div key={s.label} style={{ padding:'clamp(28px,4vw,44px) clamp(20px,3vw,40px)', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none', textAlign:'center' }}>
+               <div style={{ fontFamily:'Fraunces, serif', fontSize:'clamp(36px,4.5vw,58px)', fontWeight:300, color:'#c8f04b', lineHeight:1, letterSpacing:'-0.035em', marginBottom:10 }}>
+@@ -405,7 +407,7 @@ export default function Home() {
+         <div className="sf-inner">
+           <div className="reveal" style={{ textAlign:'center', marginBottom:'clamp(40px,6vw,64px)' }}>
+             <span style={chip}>WHAT&apos;S INCLUDED</span>
+-            <h2 style={h2}>Everything a tradie site <em style={{ color:'#c8f04b', fontStyle:'italic' }}>actually needs</em></h2>
++            <h2 style={h2}>Everything a cleaning site <em style={{ color:'#c8f04b', fontStyle:'italic' }}>actually needs</em></h2>
+             <p style={{ fontSize:16, color:'rgba(255,255,255,0.42)', maxWidth:540, margin:'12px auto 0', lineHeight:1.75 }}>
+               No upsells. No hidden extras. Every package includes the full stack of tools that drive local enquiries and Google rankings.
+             </p>
+@@ -426,10 +428,10 @@ export default function Home() {
+       <section id="reviews" className="sf-sec" style={{ background:'#080f0a' }}>
+         <div className="sf-inner">
+           <div className="reveal" style={{ textAlign:'center', marginBottom:'clamp(40px,6vw,64px)' }}>
+-            <span style={chip}>REAL TRADIE RESULTS</span>
++            <span style={chip}>CLIENT RESULTS</span>
+             <h2 style={h2}>What our clients <em style={{ color:'#c8f04b', fontStyle:'italic' }}>say</em></h2>
+             <p style={{ fontSize:16, color:'rgba(255,255,255,0.42)', maxWidth:520, margin:'12px auto 0', lineHeight:1.75 }}>
+-              Australian tradies who launched with SiteForge and saw results in the first week.
++              Australian cleaning businesses who launched with SiteForge.
+             </p>
+           </div>
+           <div className="sf-test-grid">
+@@ -495,10 +497,12 @@ export default function Home() {
+                     <span style={{ fontSize:10, fontWeight:800, letterSpacing:'0.1em', color:'#c8f04b' }}>{plan.delivery}</span>
+                   </div>
+                   <div style={{ fontSize:10, fontWeight:800, letterSpacing:'0.1em', color:'rgba(255,255,255,0.32)', marginBottom:10 }}>{plan.tier.toUpperCase()}</div>
+-                  <div style={{ display:'flex', alignItems:'flex-start', gap:2, marginBottom:10 }}>
++                  <div style={{ display:'flex', alignItems:'flex-start', gap:2, marginBottom:6 }}>
+                     <span style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.45)', marginTop:12, lineHeight:1 }}>A$</span>
+                     <span style={{ fontFamily:'Fraunces, serif', fontSize:'clamp(50px,5.5vw,68px)', fontWeight:300, color:'white', lineHeight:1, letterSpacing:'-0.04em' }}>{plan.price}</span>
++                    <span style={{ fontSize:15, fontWeight:600, color:'rgba(255,255,255,0.45)', alignSelf:'flex-end', marginBottom:14, marginLeft:2 }}>/mo</span>
+                   </div>
++                  <div style={{ fontSize:12, fontWeight:600, color:'#c8f04b', marginBottom:14, letterSpacing:'0.01em' }}>{plan.setup}</div>
+                   <p style={{ fontSize:14, color:'rgba(255,255,255,0.44)', margin:'0 0 28px', lineHeight:1.7 }}>{plan.desc}</p>
+                   <ul style={{ listStyle:'none', padding:0, margin:'0 0 28px' }}>
+                     {plan.features.map(f => (
+@@ -524,7 +528,7 @@ export default function Home() {
+         <div className="sf-inner-sm">
+           <div className="reveal" style={{ textAlign:'center', marginBottom:'clamp(36px,5vw,60px)' }}>
+             <span style={chip}>FAQ</span>
+-            <h2 style={h2}>Questions tradies <em style={{ color:'#c8f04b', fontStyle:'italic' }}>always ask</em></h2>
++            <h2 style={h2}>Questions cleaners <em style={{ color:'#c8f04b', fontStyle:'italic' }}>always ask</em></h2>
+             <p style={{ fontSize:16, color:'rgba(255,255,255,0.42)', maxWidth:500, margin:'12px auto 0', lineHeight:1.75 }}>
+               Everything you need to know before you get started. Still have questions? Email us at{' '}
+               <a href="mailto:hello@siteforge.com.au" style={{ color:'#c8f04b', textDecoration:'none' }}>hello@siteforge.com.au</a>
+@@ -559,7 +563,7 @@ export default function Home() {
+             Your competitors are <em style={{ color:'#c8f04b', fontStyle:'italic' }}>already online</em>
+           </h2>
+           <p style={{ fontSize:'clamp(15px,1.8vw,17px)', color:'rgba(255,255,255,0.48)', maxWidth:480, margin:'0 auto 44px', lineHeight:1.75 }}>
+-            Every day without a professional site is leads going to the tradie down the road. Launch yours in 48 hours — starting from $599.
++            Every day without a professional site is bookings going to the cleaner down the road. Launch yours in 48 hours — from A$99/month, no big upfront cost.
+           </p>
+           <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap' }}>
+             <a href="#quote" className="btn-primary" style={{ display:'inline-block', background:'#c8f04b', color:'#080f0a', padding:'14px 36px', borderRadius:9999, fontSize:15, fontWeight:700, textDecoration:'none', boxShadow:'0 8px 32px rgba(200,240,75,0.28)' }}>
+@@ -597,11 +601,6 @@ export default function Home() {
+                 We&apos;ll be in touch within 2 hours. In the meantime, complete your intake form so we can get started right away.
+               </p>
+ 
+-              {/* DEBUG — remove after confirming token works */}
+-              <p style={{ fontSize:11, color:'rgba(255,255,0,0.6)', marginBottom:16, wordBreak:'break-all' }}>
+-                DEBUG token: {intakeToken || '(empty — API not returning token)'}
+-              </p>
+-
+               {intakeUrl && (
+                 <>
+                   {/* Prominent intake CTA */}
+@@ -645,12 +644,12 @@ export default function Home() {
+                 <FI label="EMAIL *"         value={form.email}     onChange={v => up('email',v)}     ph="sarah@business.com.au" type="email" />
+               </div>
+               <div className="sf-form-row">
+-                <FS label="BUSINESS TYPE *" value={form.niche} onChange={v => up('niche',v)} placeholder="Select your trade"
+-                  opts={['Plumbing','Electrical','Cleaning','Landscaping','Pest Control','Painting','HVAC','Handyman','Locksmith','Carpentry','Tiling','Fencing','Roofing','Concreting','Other']} />
++                <FS label="BUSINESS TYPE *" value={form.niche} onChange={v => up('niche',v)} placeholder="Select your service"
++                  opts={['Bond / End of Lease Cleaning','Regular / Domestic Cleaning','Commercial / Office Cleaning','Carpet & Upholstery','Airbnb / Short-stay','NDIS Cleaning','Other']} />
+                 <FI label="CITY / REGION"   value={form.city}      onChange={v => up('city',v)}      ph="Sydney" />
+               </div>
+               <FS label="PACKAGE INTEREST" value={form.plan} onChange={v => up('plan',v)} placeholder="Not sure yet — help me choose"
+-                opts={['Not sure yet — help me choose','Starter ($599)','Professional ($999)','Premium ($1,799)']} />
++                opts={['Not sure yet — help me choose','Starter (A$99/mo)','Professional (A$149/mo)','Premium (A$249/mo)']} />
+               <div style={{ marginBottom:20 }}>
+                 <label style={fl}>ANYTHING ELSE?</label>
+                 <textarea value={form.message} onChange={e => up('message',e.target.value)}
+@@ -681,7 +680,7 @@ export default function Home() {
+                 <span style={{ color:'#c8f04b' }}>⚡</span>SiteForge <span style={{ color:'#CCFF00', fontFamily:'Outfit, sans-serif', fontWeight:700 }}>AI</span>
+               </a>
+               <p style={{ fontSize:13, color:'rgba(255,255,255,0.28)', lineHeight:1.75, margin:'0 0 20px', maxWidth:240 }}>
+-                Premium websites for Australian tradies and local businesses — live in 48 hours.
++                Lead-getting websites for Australian cleaning businesses — live in 48 hours, from A$99/month.
+               </p>
+               <span style={{ display:'inline-flex', alignItems:'center', gap:6, border:'1px solid rgba(200,240,75,0.25)', borderRadius:6, padding:'5px 12px', fontSize:11, fontWeight:700, letterSpacing:'0.07em', color:'#c8f04b' }}>
+                 AU 100% AUSTRALIAN
+@@ -689,7 +688,7 @@ export default function Home() {
+             </div>
+             {[
+               { title:'Services',      links:[['#quote','Website Design'],['#quote','Local SEO'],['#quote','Suburb Landing Pages'],['#quote','Booking Integration'],['#quote','Domain Setup']] },
+-              { title:'Trades We Serve', links:[['#quote','Plumbers'],['#quote','Electricians'],['#quote','Cleaners'],['#quote','Landscapers'],['#quote','Painters'],['#quote','Pest Control']] },
++              { title:'Cleaning Niches', links:[['#quote','Bond / End of Lease'],['#quote','Domestic Cleaning'],['#quote','Commercial Cleaning'],['#quote','Carpet & Upholstery'],['#quote','Airbnb Turnover'],['#quote','NDIS Cleaning']] },
+               { title:'Company',       links:[['#how','How it works'],['#pricing','Pricing'],['#reviews','Reviews'],['#faq','FAQ'],['mailto:hello@siteforge.com.au','Contact us']] },
+             ].map(col => (
+               <div key={col.title}>
+@@ -704,7 +703,7 @@ export default function Home() {
+           </div>
+           <div className="sf-footer-bar">
+             <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', margin:0 }}>
+-              © {new Date().getFullYear()} SiteForge AI. ABN 00 000 000 000. All rights reserved.
++              © {new Date().getFullYear()} SiteForge AI. All rights reserved.{/* TODO: add real ABN here once registered, e.g. "ABN 12 345 678 901" */}
+             </p>
+             <div className="sf-footer-links">
+               {['Privacy Policy','Terms of Service','Refund Policy'].map(l => (
