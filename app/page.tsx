@@ -268,7 +268,7 @@ const PAGE_CSS = `
 
 // ─── Home ──────────────────────────────────────────────────────────
 export default function Home() {
-  const [form, setForm] = useState({ firstName:'', lastName:'', bizName:'', phone:'', email:'', niche:'', city:'', plan:'', message:'' })
+  const [form, setForm] = useState({ firstName:'', lastName:'', bizName:'', phone:'', email:'', niche:'', city:'', plan:'', message:'', website:'' })
   const [submitting,   setSubmitting]   = useState(false)
   const [submitted,    setSubmitted]    = useState(false)
   const [intakeToken,  setIntakeToken]  = useState('')
@@ -634,6 +634,12 @@ export default function Home() {
             </div>
           ) : (
             <form onSubmit={submit} className="reveal glass-card" style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:24, padding:'clamp(28px,4vw,44px) clamp(24px,4vw,40px)', boxShadow:'0 32px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07)' }}>
+              {/* Honeypot — hidden from humans; bots fill it and get silently rejected */}
+              <div aria-hidden="true" style={{ position:'absolute', left:'-9999px', top:'auto', width:1, height:1, overflow:'hidden' }}>
+                <label>Website
+                  <input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={e => up('website', e.target.value)} />
+                </label>
+              </div>
               <div className="sf-form-row">
                 <FI label="FIRST NAME *"    value={form.firstName} onChange={v => up('firstName',v)} ph="Sarah" />
                 <FI label="LAST NAME *"     value={form.lastName}  onChange={v => up('lastName',v)}  ph="Williams" />

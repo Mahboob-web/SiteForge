@@ -1,0 +1,349 @@
+diff --git a/app/api/submit-lead/route.ts b/app/api/submit-lead/route.ts
+index 733b73e..d29cc1c 100644
+--- a/app/api/submit-lead/route.ts
++++ b/app/api/submit-lead/route.ts
+@@ -3,6 +3,21 @@ import { createClient } from '@supabase/supabase-js'
+ import { randomUUID } from 'crypto'
+ import { sendLeadNotification } from '@/lib/email'
+ 
++// ── Best-effort in-memory rate limiter (per serverless instance) ──
++const RATE_LIMIT = 5            // max submissions
++const RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
++const hits = new Map<string, number[]>()
++
++function isRateLimited(ip: string): boolean {
++  const now = Date.now()
++  const recent = (hits.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS)
++  recent.push(now)
++  hits.set(ip, recent)
++  return recent.length > RATE_LIMIT
++}
++
++const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
++
+ export async function POST(req: NextRequest) {
+   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+   const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+@@ -17,12 +32,36 @@ export async function POST(req: NextRequest) {
+     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+   }
+ 
++  // 1) Honeypot — bots fill the hidden "website" field; humans never see it.
++  //    Pretend success so the bot doesn't retry, but save nothing.
++  if (body.website && body.website.trim() !== '') {
++    return NextResponse.json({ success: true, message: 'Thank you! We\u2019ll be in touch.' })
++  }
++
++  // 2) Rate limit by IP
++  const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
++  if (isRateLimited(ip)) {
++    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
++  }
++
+   const { firstName, lastName, bizName, phone, email, niche, city, message, plan } = body
+ 
+   if (!firstName || !bizName || !phone || !email || !niche) {
+     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+   }
+ 
++  // 3) Basic validation
++  if (!EMAIL_RE.test(email)) {
++    return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
++  }
++  // 4) Length caps — block oversized/spammy payloads
++  const tooLong =
++    firstName.length > 80 || bizName.length > 120 || phone.length > 40 ||
++    email.length > 120 || (message || '').length > 2000
++  if (tooLong) {
++    return NextResponse.json({ error: 'Input too long.' }, { status: 400 })
++  }
++
+   try {
+     const db = createClient(supabaseUrl, serviceKey, {
+       auth: { autoRefreshToken: false, persistSession: false },
+diff --git a/app/layout.tsx b/app/layout.tsx
+index dc4b5be..eb187ef 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,15 +1,55 @@
+ import type { Metadata } from "next";
++import { Analytics } from "@vercel/analytics/next";
+ import "./globals.css";
+ 
++// Change this to your custom domain once connected (e.g. https://siteforge.com.au)
++const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://site-forge-liard.vercel.app";
++
+ export const metadata: Metadata = {
+-  title: "SiteForge AI — Websites for Australian Cleaning Businesses",
+-  description: "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month — no big upfront cost.",
++  metadataBase: new URL(SITE_URL),
++  title: {
++    default: "SiteForge AI — Websites for Australian Cleaning Businesses",
++    template: "%s | SiteForge AI",
++  },
++  description:
++    "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month — no big upfront cost.",
++  keywords: [
++    "cleaning business website",
++    "bond cleaning website",
++    "website for cleaners Australia",
++    "website as a service",
++    "Australian cleaning marketing",
++  ],
++  alternates: { canonical: "/" },
+   openGraph: {
+     title: "SiteForge AI — Websites for Australian Cleaning Businesses",
+-    description: "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month.",
++    description:
++      "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month.",
++    url: SITE_URL,
++    siteName: "SiteForge AI",
+     type: "website",
+     locale: "en_AU",
+   },
++  twitter: {
++    card: "summary_large_image",
++    title: "SiteForge AI — Websites for Australian Cleaning Businesses",
++    description:
++      "AI-built websites that get cleaning businesses booked. Live in 48 hours, from A$99/month.",
++  },
++  robots: { index: true, follow: true },
++};
++
++const orgJsonLd = {
++  "@context": "https://schema.org",
++  "@type": "ProfessionalService",
++  name: "SiteForge AI",
++  description:
++    "AI-built websites for Australian cleaning businesses, provided as a monthly subscription (Website-as-a-Service).",
++  url: SITE_URL,
++  email: "hello@siteforge.com.au",
++  areaServed: { "@type": "Country", name: "Australia" },
++  serviceType: "Website design and hosting for cleaning businesses",
++  priceRange: "A$99–A$249/month",
+ };
+ 
+ export default function RootLayout({ children }: { children: React.ReactNode }) {
+@@ -17,9 +57,19 @@ export default function RootLayout({ children }: { children: React.ReactNode })
+     <html lang="en" suppressHydrationWarning>
+       <head>
+         <link rel="preconnect" href="https://fonts.googleapis.com" />
+-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
++        <link
++          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=Outfit:wght@300;400;500;600;700&display=swap"
++          rel="stylesheet"
++        />
++        <script
++          type="application/ld+json"
++          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
++        />
+       </head>
+-      <body style={{ margin: 0, padding: 0 }}>{children}</body>
++      <body style={{ margin: 0, padding: 0 }}>
++        {children}
++        <Analytics />
++      </body>
+     </html>
+   );
+ }
+diff --git a/app/manifest.ts b/app/manifest.ts
+new file mode 100644
+index 0000000..da3d82d
+--- /dev/null
++++ b/app/manifest.ts
+@@ -0,0 +1,14 @@
++import type { MetadataRoute } from "next";
++
++export default function manifest(): MetadataRoute.Manifest {
++  return {
++    name: "SiteForge AI",
++    short_name: "SiteForge",
++    description: "Websites for Australian cleaning businesses — live in 48 hours.",
++    start_url: "/",
++    display: "standalone",
++    background_color: "#070d08",
++    theme_color: "#070d08",
++    icons: [{ src: "/favicon.ico", sizes: "any", type: "image/x-icon" }],
++  };
++}
+diff --git a/app/not-found.tsx b/app/not-found.tsx
+new file mode 100644
+index 0000000..958cf1a
+--- /dev/null
++++ b/app/not-found.tsx
+@@ -0,0 +1,48 @@
++import Link from "next/link";
++
++export const metadata = { title: "Page not found" };
++
++export default function NotFound() {
++  return (
++    <div
++      style={{
++        minHeight: "100vh",
++        background:
++          "radial-gradient(120% 120% at 70% -10%, rgba(200,240,75,0.10) 0%, transparent 55%), linear-gradient(180deg,#0c1a0d 0%,#070d08 100%)",
++        color: "#fff",
++        fontFamily: "Outfit, sans-serif",
++        display: "flex",
++        flexDirection: "column",
++        alignItems: "center",
++        justifyContent: "center",
++        textAlign: "center",
++        padding: "24px",
++      }}
++    >
++      <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#c8f04b", margin: "0 0 18px" }}>
++        Error 404
++      </p>
++      <h1 style={{ fontFamily: "Fraunces, serif", fontSize: "clamp(40px,8vw,72px)", fontWeight: 400, letterSpacing: "-0.03em", lineHeight: 1, margin: "0 0 16px" }}>
++        Page not found
++      </h1>
++      <p style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", maxWidth: 420, lineHeight: 1.7, margin: "0 0 32px" }}>
++        The page you&apos;re looking for doesn&apos;t exist or has moved. Let&apos;s get you back on track.
++      </p>
++      <Link
++        href="/"
++        style={{
++          display: "inline-block",
++          background: "#c8f04b",
++          color: "#0a1a10",
++          fontWeight: 700,
++          fontSize: 15,
++          textDecoration: "none",
++          padding: "13px 28px",
++          borderRadius: 9999,
++        }}
++      >
++        Back to home
++      </Link>
++    </div>
++  );
++}
+diff --git a/app/opengraph-image.tsx b/app/opengraph-image.tsx
+new file mode 100644
+index 0000000..dba8e97
+--- /dev/null
++++ b/app/opengraph-image.tsx
+@@ -0,0 +1,44 @@
++import { ImageResponse } from "next/og";
++
++export const alt = "SiteForge AI — Websites for Australian Cleaning Businesses";
++export const size = { width: 1200, height: 630 };
++export const contentType = "image/png";
++
++export default function OgImage() {
++  return new ImageResponse(
++    (
++      <div
++        style={{
++          width: "100%",
++          height: "100%",
++          display: "flex",
++          flexDirection: "column",
++          justifyContent: "space-between",
++          background: "linear-gradient(135deg, #0c1a0d 0%, #070d08 100%)",
++          padding: "72px 80px",
++          fontFamily: "sans-serif",
++        }}
++      >
++        <div style={{ display: "flex", alignItems: "center", fontSize: 34, color: "#fff", fontWeight: 700 }}>
++          <span style={{ color: "#c8f04b", marginRight: 12 }}>⚡</span>
++          SiteForge <span style={{ color: "#CCFF00", marginLeft: 8 }}>AI</span>
++        </div>
++
++        <div style={{ display: "flex", flexDirection: "column" }}>
++          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 4, color: "#c8f04b", marginBottom: 22 }}>
++            WEBSITES FOR AUSTRALIAN CLEANING BUSINESSES
++          </div>
++          <div style={{ fontSize: 64, color: "#fff", lineHeight: 1.05, fontWeight: 600, maxWidth: 900 }}>
++            Get booked online. Live in 48 hours.
++          </div>
++        </div>
++
++        <div style={{ display: "flex", alignItems: "center", fontSize: 30, color: "rgba(255,255,255,0.7)" }}>
++          From{" "}
++          <span style={{ color: "#c8f04b", fontWeight: 700, margin: "0 10px" }}>A$99/month</span> · no big upfront cost
++        </div>
++      </div>
++    ),
++    { ...size }
++  );
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index 5a94cec..bcd708d 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -268,7 +268,7 @@ const PAGE_CSS = `
+ 
+ // ─── Home ──────────────────────────────────────────────────────────
+ export default function Home() {
+-  const [form, setForm] = useState({ firstName:'', lastName:'', bizName:'', phone:'', email:'', niche:'', city:'', plan:'', message:'' })
++  const [form, setForm] = useState({ firstName:'', lastName:'', bizName:'', phone:'', email:'', niche:'', city:'', plan:'', message:'', website:'' })
+   const [submitting,   setSubmitting]   = useState(false)
+   const [submitted,    setSubmitted]    = useState(false)
+   const [intakeToken,  setIntakeToken]  = useState('')
+@@ -634,6 +634,12 @@ export default function Home() {
+             </div>
+           ) : (
+             <form onSubmit={submit} className="reveal glass-card" style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:24, padding:'clamp(28px,4vw,44px) clamp(24px,4vw,40px)', boxShadow:'0 32px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07)' }}>
++              {/* Honeypot — hidden from humans; bots fill it and get silently rejected */}
++              <div aria-hidden="true" style={{ position:'absolute', left:'-9999px', top:'auto', width:1, height:1, overflow:'hidden' }}>
++                <label>Website
++                  <input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={e => up('website', e.target.value)} />
++                </label>
++              </div>
+               <div className="sf-form-row">
+                 <FI label="FIRST NAME *"    value={form.firstName} onChange={v => up('firstName',v)} ph="Sarah" />
+                 <FI label="LAST NAME *"     value={form.lastName}  onChange={v => up('lastName',v)}  ph="Williams" />
+diff --git a/app/robots.ts b/app/robots.ts
+new file mode 100644
+index 0000000..f699c71
+--- /dev/null
++++ b/app/robots.ts
+@@ -0,0 +1,14 @@
++import type { MetadataRoute } from "next";
++
++const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://site-forge-liard.vercel.app";
++
++export default function robots(): MetadataRoute.Robots {
++  return {
++    rules: {
++      userAgent: "*",
++      allow: "/",
++      disallow: ["/api/", "/dashboard", "/intake"],
++    },
++    sitemap: `${SITE_URL}/sitemap.xml`,
++  };
++}
+diff --git a/app/sitemap.ts b/app/sitemap.ts
+new file mode 100644
+index 0000000..3280633
+--- /dev/null
++++ b/app/sitemap.ts
+@@ -0,0 +1,13 @@
++import type { MetadataRoute } from "next";
++
++const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://site-forge-liard.vercel.app";
++
++export default function sitemap(): MetadataRoute.Sitemap {
++  const now = new Date();
++  return [
++    { url: `${SITE_URL}/`,        lastModified: now, changeFrequency: "weekly",  priority: 1.0 },
++    { url: `${SITE_URL}/privacy`, lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
++    { url: `${SITE_URL}/terms`,   lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
++    { url: `${SITE_URL}/refund`,  lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
++  ];
++}
+diff --git a/package.json b/package.json
+index 16c150b..a50b2bd 100644
+--- a/package.json
++++ b/package.json
+@@ -11,6 +11,7 @@
+   "dependencies": {
+     "@anthropic-ai/sdk": "^0.102.0",
+     "@supabase/supabase-js": "^2.107.0",
++    "@vercel/analytics": "^2.0.1",
+     "axios": "^1.17.0",
+     "next": "16.2.7",
+     "react": "19.2.4",

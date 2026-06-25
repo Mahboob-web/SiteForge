@@ -3,6 +3,21 @@ import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { sendLeadNotification } from '@/lib/email'
 
+// ── Best-effort in-memory rate limiter (per serverless instance) ──
+const RATE_LIMIT = 5            // max submissions
+const RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
+const hits = new Map<string, number[]>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const recent = (hits.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS)
+  recent.push(now)
+  hits.set(ip, recent)
+  return recent.length > RATE_LIMIT
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export async function POST(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -17,10 +32,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
+  // 1) Honeypot — bots fill the hidden "website" field; humans never see it.
+  //    Pretend success so the bot doesn't retry, but save nothing.
+  if (body.website && body.website.trim() !== '') {
+    return NextResponse.json({ success: true, message: 'Thank you! We\u2019ll be in touch.' })
+  }
+
+  // 2) Rate limit by IP
+  const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  }
+
   const { firstName, lastName, bizName, phone, email, niche, city, message, plan } = body
 
   if (!firstName || !bizName || !phone || !email || !niche) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  // 3) Basic validation
+  if (!EMAIL_RE.test(email)) {
+    return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
+  }
+  // 4) Length caps — block oversized/spammy payloads
+  const tooLong =
+    firstName.length > 80 || bizName.length > 120 || phone.length > 40 ||
+    email.length > 120 || (message || '').length > 2000
+  if (tooLong) {
+    return NextResponse.json({ error: 'Input too long.' }, { status: 400 })
   }
 
   try {
