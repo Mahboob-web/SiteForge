@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import LiveDemos from "@/components/LiveDemos";
 
 // ─── Mock Browser (hero right) ─────────────────────────────────────
 function MockBrowser() {
@@ -460,7 +461,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+<LiveDemos />
       {/* ══ PRICING ══ */}
       <section id="pricing" className="sf-sec" style={{ background:'linear-gradient(180deg,#0a1309 0%,#080f0a 100%)' }}>
         <div className="sf-inner">
